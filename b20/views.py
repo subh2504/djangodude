@@ -130,6 +130,7 @@ def reg_user(request):
 
     appmode = "AND"
     accesstoken = "EAACVuZCS6jj4BADUtrtR63785qnc9JiR4JZAVPx8Y73KAZAbRoURSztPuZBfFyawtspOPg0nwXb1X6IiE43FY7G0UBmEUdcQNqQiicoabfJLlYkEcXRelpciPPn5hPxhDTkmQS8bfCRIDqJswSpLYp1L7m5xgXh9O9ALJLkgzfZCWcO5wXBsHiPfiuhXpekatz2jsftwB9AZDZD"
+
     appversion = "1.1.9"
     handsettype = "xhdpi"
     osversion = "4.4.4"
@@ -235,10 +236,22 @@ def allc(request):
     #register_user()
     users = User.objects.all()
     for u in users:
+        print("*" * 20)
         print(u.userid)
-        q(u.userid)
-        print("*"*20)
+        print("*" * 20)
+        print("\n")
+        print("---------------------------------Getting BMS quiz----------------------------------------\n")
+
+        bmsquizb20(request=request, uid=u.userid)
+        print("---------------------------------Getting Daily quiz----------------------------------------\n")
+
+        q(uid=u.userid)
+        print("---------------------------------Getting Coupon----------------------------------------\n")
         get_coupon(u.userid)
+        print("---------------------------------Getting BMS Coupon----------------------------------------\n")
+
+        get_bmscoupon(u.userid)
+
     coupons=AliveVoucher.objects.all()
     winpin=BMSVoucher.objects.all()
     return render(request, 'b20/all.html', {'coupons':coupons,'winpin':winpin})
@@ -254,7 +267,9 @@ def user_details(request, uid):
     coupons=AliveVoucher.objects.filter(userid=u)
     print(list(coupons))
     print(u.userid)
-    return render(request, 'b20/user.html', {'user': u,'coupons':coupons})
+    winpin = BMSVoucher.objects.all()
+    print(list(winpin))
+    return render(request, 'b20/user.html', {'user': u,'coupons':coupons,'winpin':winpin})
 
 
 def get_coupon(uid):
@@ -284,7 +299,6 @@ def get_coupon(uid):
     if(json_data["status"]=="OK"):
         for c in json_data["coupon"]:
             AliveVoucher.objects.get_or_create(userid=u,couponcode=c["couponcode"],coupondate=c["coupondate"],expirydate=c["expirydate"])
-
 
 
 def quizb20(request, uid):
@@ -439,4 +453,117 @@ def q(uid):
     data1 = [{"data":data,"questions":questions}]
     
     r = requests.post(url, data=json.dumps(data1), headers=headers)
-    print(r.text)
+    print((r.text).encode("utf-8"))
+
+
+
+
+
+
+
+def bmsquizb20(request, uid):
+    millis = int(round(time.time() * 1000))
+
+    u = get_object_or_404(User, userid=uid)
+    url1 = "http://app.follo.co.in/bollyapi/api/quizcard/getquestions"
+
+    data1 = {
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "osversion": u.osversion,
+        "celebid": "0",
+        "deviceid": u.deviceid
+    }
+    headers1 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'app.follo.co.in',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip'}
+    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+    json_data = json.loads(r.text)[0]
+
+    url = "http://app.follo.co.in/bollyapi/api/userresponse/answer"
+
+
+    data = [{
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "osversion": u.osversion,
+        "deviceid": u.deviceid
+
+    }]
+
+    ts=0;
+
+    print(millis)
+    questions = []
+
+    #print(json_data["question"])
+    for j in json_data["question"]:
+        #print(j)
+        ts=ts+1
+        q={"timeTaken": str(random.randint(2,8)),
+           "totalques": "10",
+           "quizid": j["quizid"],
+           "totalquesattempt": "10",
+           "isattempt": "1",
+           "totalscore": str(ts),
+           "points": j["points"],
+           "sessionid": str(millis),
+           "questionid": j["questionid"],
+           "givenanswerid": j["answer"]
+             }
+        #print("++++++++++++++++++++++++++++++++++++++++\n")
+        #print(q)
+        questions.append(q)
+    headers = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'app.follo.co.in',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip'}
+
+    data1 = [{"data":data,"questions":questions}]
+
+    r = requests.post(url, data=json.dumps(data1), headers=headers)
+    print((r.text).encode("utf-8"))
+
+def get_bmscoupon(uid):
+    u = get_object_or_404(User, userid=uid)
+    url1 = "http://app.follo.co.in/bollyapi/api/FFFVoucherList/getfffvouchers"
+    data1 = {
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "osversion": u.osversion,
+        "deviceid": u.deviceid
+    }
+    headers1 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'app.follo.co.in',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip'}
+
+    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+    json_data = json.loads(r.text)[0]
+    print(json_data)
+    if(json_data["status"]=="OK"):
+        for c in json_data["coupon"]:
+            BMSVoucher.objects.get_or_create(userid=u,couponcode=c["couponcode"],coupondate=c["coupondate"],expirydate=c["expirydate"])
+

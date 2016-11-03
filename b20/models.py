@@ -44,10 +44,10 @@ class AliveVoucher(models.Model):
 
 
 class BMSVoucher(models.Model):
-    serid = models.ForeignKey("User")
+    userid = models.ForeignKey("User")
     couponcode=models.TextField(unique=True)
-    coupondate=models.DateField(null=True)
-    expirydate=models.DateField(null=True)
+    coupondate=models.CharField(null=True,max_length=20)
+    expirydate=models.CharField(null=True,max_length=20)
     used=models.BooleanField(default=False)
 
     def __str__(self):  # __unicode__ on Python 2
