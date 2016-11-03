@@ -24,7 +24,13 @@
     </div>
     
     <button type="submit" class="btn btn-default">Submit</button>
-    <button type="button" class="btn btn-default">Auto Register</button>
+
+    
+  </form>
+      <br>
+  <form action="{% url 'reg_user' %}" method="POST">
+    {% csrf_token %}
+      <button type="submit" class="btn btn-default">Auto Register</button>
   </form>
 
 

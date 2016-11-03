@@ -28,7 +28,8 @@ class User(models.Model):
     advid = models.CharField(max_length=40)
     createdate = models.DateTimeField(default=timezone.now)
 
-
+    def __str__(self):  # __unicode__ on Python 2
+        return str(self.userid)
 
 
 class AliveVoucher(models.Model):

@@ -12,23 +12,20 @@
 <body>
 
 <div class="container">
-  <h2>Get Voucher</h2>
-   <form action="{% url 'quizb20' uid=user.userid %}" method="POST">
-    {% csrf_token %}
-      <center><button type="submit" id="getQues" class="btn btn-default">Get Coupon</button>
-  </form>
-   
-  </center> 
+<br>
+<br>
 
 
-<hr>
-  <h2>B20 Vouchers</h2>
+
+  <hr>
+  <h2>Alive Coupons</h2>
   <p></p>
   <div class="table-responsive">
   <table class="table">
     <thead>
       <tr>
         <th>#</th>
+        <th>User Id</th>
         <th>Coupon Code</th>
         <th>Coupon Date</th>
         <th>Expiry Date</th>
@@ -38,6 +35,7 @@
     {% for c in coupons %}
     <tr>
         <td>*</td>
+        <td>{{c.userid.userid }}</td>
         <td>{{ c.couponcode }}</td>
         <td>{{ c.coupondate }}</td>
         <td>{{ c.expirydate }}</td>
@@ -49,6 +47,38 @@
     </tbody>
   </table>
   </div>
+  
+  <hr>
+  <h2>WinPin Coupons</h2>
+  <p></p>
+  <div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>User Id</th>
+        <th>Coupon Code</th>
+        <th>Coupon Date</th>
+        <th>Expiry Date</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in winpin %}
+    <tr>
+        <td>*</td>
+        <td>{{ c.userid.userid }}</td>
+        <td>{{ c.couponcode }}</td>
+        <td>{{ c.coupondate }}</td>
+        <td>{{ c.expirydate }}</td>
+
+      </tr>
+    	
+	{% endfor %}
+      
+    </tbody>
+  </table>
+  </div>
+  
 </div>
 
 </body>
