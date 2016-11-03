@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>DjangoDude B20</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h2>Register new user</h2>
+  <form class="form-inline">
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input type="email" class="form-control" id="email" placeholder="Enter email">
+    </div>
+    <div class="form-group">
+      <label for="pwd">Password:</label>
+      <input type="password" class="form-control" id="pwd" placeholder="Enter password">
+    </div>
+    
+    <button type="submit" class="btn btn-default">Submit</button>
+    <button type="button" class="btn btn-default">Auto Register</button>
+  </form>
+
+
+
+<hr>
+  <h2>Registered Users</h2>
+  <p></p>
+  <div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>UserId</th>
+        <th>Name</th>
+        <th>EmailId</th>
+        <th>Created On</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for user in users %}
+    <tr>
+        <td>*</td>
+        <td><a href={% url 'user_details' uid=user.userid %}>
+    {{ user.userid }} </a></td>
+        <td>{{ user.username }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.createdate }}</td>
+    </tr>
+   	
+	{% endfor %}
+      
+    </tbody>
+  </table>
+  </div>
+</div>
+
+</body>
+</html>
+

@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>DjangoDude B20</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(document).on("click",'#getQues',
+            function() {
+                $.ajax({
+                    type: "POST",
+                    data: { action: "quizb20"},
+                    success: function(data){}
+
+</script>
+<div class="container">
+  <h2>Get Voucher</h2>
+  
+   <center><button type="button" id="getQues" class="btn btn-default">Get Question</button>
+  </center> 
+
+<a href={% url 'quizb20' uid=user.userid %}>Click</a>
+
+<hr>
+  <h2>B20 Vouchers</h2>
+  <p></p>
+  <div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Coupon Code</th>
+        <th>Coupon Date</th>
+        <th>Expiry Date</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in coupons %}
+    <tr>
+        <td>*</td>
+        <td>{{ c.couponcode }}</td>
+        <td>{{ c.coupondate }}</td>
+        <td>{{ c.expirydate }}</td>
+
+      </tr>
+    	
+	{% endfor %}
+      
+    </tbody>
+  </table>
+  </div>
+</div>
+
+</body>
+</html>
+
