@@ -36,7 +36,7 @@ class AliveVoucher(models.Model):
     userid = models.ForeignKey("User")
     couponcode=models.TextField(unique=True)
     coupondate=models.DateField(null=True)
-    expirydate=models.DateField(null=True)
+    #expirydate=models.DateField(null=True)
     used=models.BooleanField(default=False)
 
     def __str__(self):  # __unicode__ on Python 2
@@ -46,8 +46,8 @@ class AliveVoucher(models.Model):
 class BMSVoucher(models.Model):
     userid = models.ForeignKey("User")
     couponcode=models.TextField(unique=True)
-    coupondate=models.CharField(null=True,max_length=20)
-    expirydate=models.CharField(null=True,max_length=20)
+    coupondate=models.DateField(null=True,max_length=20)
+    #expirydate=models.CharField(null=True,max_length=20)
     used=models.BooleanField(default=False)
 
     def __str__(self):  # __unicode__ on Python 2

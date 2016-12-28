@@ -15,7 +15,12 @@
   <h2>Get Voucher</h2>
    <form action="{% url 'quizb20' uid=user.userid %}" method="POST">
     {% csrf_token %}
-      <center><button type="submit" id="getQues" class="btn btn-default">Get Coupon</button>
+      <center><button type="submit" id="getQues" class="btn btn-default">Get Coupon</button><br>
+  </form>
+
+  <form action="{% url 'bmsquizb20' uid=user.userid %}" method="POST">
+    {% csrf_token %}
+      <center><button type="submit" id="getBmsQues" class="btn btn-default">Get BmSCoupon</button>
   </form>
    
   </center> 
@@ -31,16 +36,16 @@
         <th>#</th>
         <th>Coupon Code</th>
         <th>Coupon Date</th>
-        <th>Expiry Date</th>
+       
       </tr>
     </thead>
     <tbody>
     {% for c in coupons %}
     <tr>
-        <td>*</td>
+        <td>{{ forloop.counter }}</td>
         <td>{{ c.couponcode }}</td>
         <td>{{ c.coupondate }}</td>
-        <td>{{ c.expirydate }}</td>
+       
 
       </tr>
     	
@@ -60,17 +65,17 @@
         <th>User Id</th>
         <th>Coupon Code</th>
         <th>Coupon Date</th>
-        <th>Expiry Date</th>
+        
       </tr>
     </thead>
     <tbody>
     {% for c in winpin %}
     <tr>
-        <td>*</td>
+        <td>{{ forloop.counter }}</td>
         <td>{{ c.userid.userid }}</td>
         <td>{{ c.couponcode }}</td>
         <td>{{ c.coupondate }}</td>
-        <td>{{ c.expirydate }}</td>
+        
 
       </tr>
 
