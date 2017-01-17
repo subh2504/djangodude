@@ -1,20 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="01e0af51-29da-4549-8277-8472825e1d30" name="Default" comment="Working">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/db.sqlite3" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/b20/migrations/0011_user_session.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/random/r.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
+    <list default="true" id="01e0af51-29da-4549-8277-8472825e1d30" name="Default" comment="Working all">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/b20/migrations/0012_alivequestions.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/b20/migrations/0013_auto_20170114_2344.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/random/QA.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/random/QA1.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/random/follo.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/random/test.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/b20/admin.py" afterPath="$PROJECT_DIR$/b20/admin.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/b20/models.py" afterPath="$PROJECT_DIR$/b20/models.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/b20/templates/b20/index.html" afterPath="$PROJECT_DIR$/b20/templates/b20/index.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/b20/templates/b20/user.html" afterPath="$PROJECT_DIR$/b20/templates/b20/user.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/b20/urls.py" afterPath="$PROJECT_DIR$/b20/urls.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/b20/views.py" afterPath="$PROJECT_DIR$/b20/views.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/recharge/tt.py" afterPath="$PROJECT_DIR$/recharge/tt.py" />
     </list>
     <ignored path="djangodude.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -683,7 +677,14 @@
       <option name="project" value="LOCAL" />
       <updated>1482894614889</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Working all">
+      <created>1484681385814</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1484681385814</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TodoView">
@@ -774,7 +775,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Working" />
-    <option name="LAST_COMMIT_MESSAGE" value="Working" />
+    <MESSAGE value="Working all" />
+    <option name="LAST_COMMIT_MESSAGE" value="Working all" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -794,6 +796,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="918">
           <caret line="54" column="35" lean-forward="false" selection-start-line="54" selection-start-column="35" selection-end-line="54" selection-end-column="35" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -874,6 +877,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="918">
           <caret line="54" column="35" lean-forward="false" selection-start-line="54" selection-start-column="35" selection-end-line="54" selection-end-column="35" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -1088,6 +1092,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="155">
           <caret line="45" column="18" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="73" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
