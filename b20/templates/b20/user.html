@@ -22,10 +22,33 @@
     {% csrf_token %}
       <center><button type="submit" id="getBmsQues" class="btn btn-default">Get BmSCoupon</button>
   </form>
+
+  <form action="{% url 'konnect' uid=user.userid %}" method="POST">
+    {% csrf_token %}
+      <center><button type="submit" id="getKonn" class="btn btn-default">Konnect</button><br>
+  </form>
    
   </center> 
 
+<hr>
+<form action="{% url 'submit_mob' %}" method="POST">
+    {% csrf_token %}
+      <button type="submit" class="btn btn-default">Auto Register</button>
+      <input type="text" class="text" name="mobile">
+      <input name="id" type="hidden" value="{{ user.userid }}" />
+</form>
+<form action="{% url 'submit_otp' %}" method="POST">
+    {% csrf_token %}
+      <button type="submit" class="btn btn-default">Submit Otp</button>
+      <input name="id" type="hidden" value="{{ user.userid }}" />
+      <input type="text" class="text" name="mobile" value={% if mob != null %}{{ mob }} {% endif %}>
 
+      <input type="text" class="text" name="otp">
+</form>
+<br>
+<hr>
+<h4>{{ user.userid }}        {{user.username  }}       {{ user.email }}</h4>
+<hr>
 <hr>
   <h2>B20 Vouchers</h2>
   <p></p>

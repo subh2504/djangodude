@@ -4,7 +4,11 @@ import time
 # Create your views here.
 #100_  288364922865768 0825999060 s67phvi7-dqah-94pd-qna4-ciu5tsbwsr0e
 
-#100 297544743409655 0672084625 b22fpf2i-383s-u853-s26u-d75o77kok2wy
+#943787281493036 5398821586 59r1gyit-g57f-5p9p-sfjj-kpuv3dde6uzi
+#471886398278883 8908136787 4od3oxoq-4klh-8df2-f6vq-0rwibya3mjum  100
+#910521854886946 8845123545 1b605fa5-42b6-46d3-8847-e4def9d2318c  100
+#910521854886946 8845123546 1b605fa5-42b6-46d3-8847-e4def9d2318c  100
+#021866803190371 1550832019 3vgmuajk-l2ex-zj3n-puvm-z82cjtr42hxk
 
 import string
 import random
@@ -133,7 +137,7 @@ def campaytm():
                }
     a="st"
     while(a!="stop"):
-        a=input()
+        a=input().strip()
         print("Applying "+a)
         url="http://event.aliveonescan.com/ServiceIntegration/check_code?code="+a+"&deviceid="+deviceId+"&version=&amount=&deviceIdCheck="
         r = requests.get(url=url,headers=headers)

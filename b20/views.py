@@ -1,9 +1,10 @@
 from django.shortcuts import render, get_object_or_404
-from .models import User, AliveVoucher, BMSVoucher
+from .models import User, AliveVoucher, BMSVoucher, AliveQuestions
 import requests
 from django.http import HttpResponse, HttpResponseRedirect
 import json
 import time
+import hashlib
 from django.core.urlresolvers import reverse
 # Create your views here.
 
@@ -117,25 +118,20 @@ GENDER = ["Male", "Female"]
 ipadd = random_generator(3, string.digits) + "." + random_generator(2, string.digits) + "." + random_generator(3,
                                                                                                                string.digits) + "." + random_generator(
     2, string.digits)
+sec = "SHRPAN2212VIK0312BHUPAR8762KLMBIJ87"
 
 
 def reg_user(request):
-    print("POST http://app.follo.co.in/bollyapi/api/login/appregister HTTP/1.1")
+    print("POST https://www.follo.mobi/bollyapi/api/login/appregister HTTP/1.1")
     print("Content-Type: application/json; charset=utf-8")
-    print("Host: app.follo.co.in")
+    print("Host: www.follo.mobi")
     print("Connection: Keep-Alive")
     print("User-Agent: okhttp/3.2.0")
     print("Accept-Encoding: gzip")
     print("\n\n")
 
-    j = {"model": "HM 1S", "sex": "female", "appmode": "AND",
-         "accesstoken": "EAACVuZCS6jj4BAA2ZBAkZBgFVwApeGQlViNRHiKlNmCMc7s6hZAJtKaItlZAeFlaXzFz7XWqhZAICRy920s2F63sZBbnU7k01hFkZCxCfFwhshBd7NnhT6yB7IcjWsYtQiOVJ63tZAOAqLwMWb3CfJxCZB23ZAWAZB8EoZBZCZAT3nTYaPD15UPzGh6dYR3A9aCl4gZApkTlFrhJl94ZCQwZDZD",
-         "appversion": "2.0.4", "handsettype": "xhdpi", "osversion": "4.4.4",
-         "profileimage": "http:\/\/graph.facebook.com\/255507884868257\/picture?type=large",
-         "deviceid": "865061465585772", "mobileno": "", "socialid": "255507884868257", "username": "Namrata Yadav",
-         "manufacture": "Xiaomi", "email": "namratayadav412@gmail.com", "dob": "",
-         "tokenexpire": "Mon Feb 13 22:36:14 IST 2017", "logintype": "FB",
-         "advid": "2530B7E0-5733-48AA-8DCF-356EAE7E61EA"}
+    j = request.POST.get("data", "")
+    j = json.loads(j)
     model = j["model"]
     sex = j["sex"]
 
@@ -166,7 +162,7 @@ def reg_user(request):
              username=username, manufacture=manufacture, email=email, dob=dob, tokenexpire=tokenexpire, model=model,
              sex=sex, appmode=appmode, accesstoken=accesstoken, appversion=appversion, handsettype=handsettype,
              osversion=osversion, profileimage=profileimage)
-    url = "http://app.follo.co.in/bollyapi/api/login/appregister"
+    url = "https://www.follo.mobi/bollyapi/api/login/appregister"
     data = {
         "model": model,
         "sex": sex,
@@ -187,23 +183,53 @@ def reg_user(request):
         "logintype": logintype,
         "advid": advid
     }
-
+    milli = int(round(time.time() * 1000))
     print(data)
     headers = {'content-type': 'application/json; charset=utf-8',
                'connection': 'Keep-Alive',
-               'host': 'app.follo.co.in',
+               'host': 'www.follo.mobi',
                'user-agent': 'okhttp/3.2.0',
-               'accept-encoding': 'gzip'}
+               'accept-encoding': 'gzip',
+               'TimeStamp': str(milli),
+               'ClientHash': enc(u.session + str(milli) + sec),
+               'SessionToken': u.session,
+               }
 
-    r = requests.post(url, data=json.dumps(data), headers=headers)
+    r = requests.post(verify=False, url=url, data=json.dumps(data), headers=headers)
     json_data = json.loads(r.text)[0]
     print(json_data)
     if json_data['status'] == "OK":
         u.userid = int(json_data["userid"])
-        print(u.userid)
-        u.save()
+        u.session = json_data["sessiontoken"]
 
-    url1 = "http://app.follo.co.in/bollyapi/api/deviceregister/register"
+        try:
+            u1 = User.objects.get(userid=u.userid)
+            print("******************************************* " + str(u1.userid))
+            u1.logintype = logintype
+            u1.advid = advid
+            deviceid = deviceid
+            u1.mobileno = mobileno
+            u1.socialid = socialid
+            u1.username = username
+            u1.manufacture = manufacture
+            u1.email = email
+            u1.dob = dob
+            u1.tokenexpire = tokenexpire
+            u1.model = model
+            u1.sex = sex
+            u1.appmode = appmode
+            u1.accesstoken = accesstoken
+            u1.appversion = appversion
+            u1.handsettype = handsettype
+            u1.osversion = osversion
+            u1.profileimage = profileimage
+            u1.session = json_data["sessiontoken"]
+            u1.save()
+        except User.DoesNotExist:
+            u.save()
+        print(str(u.userid) + "    " + str(u.session))
+
+    url1 = "https://www.follo.mobi/bollyapi/api/deviceregister/register"
     data1 = {
         "regid": "",
         "model": model,
@@ -222,13 +248,19 @@ def reg_user(request):
         "name": "",
         "advid": advid
     }
+    milli = int(round(time.time() * 1000))
+
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
-                'host': 'app.follo.co.in',
+                'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
-                'accept-encoding': 'gzip'}
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
 
-    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
     json_data = json.loads(r.text)[0]
     print(json_data)
 
@@ -275,7 +307,7 @@ def user_details(request, uid):
     u = get_object_or_404(User, userid=uid)
     get_coupon(uid)
     get_profile(uid)
-    # get_bmscoupon(uid)
+    get_bmscoupon(uid)
     coupons = AliveVoucher.objects.filter(userid=u)
     print(list(coupons))
     print(u.userid)
@@ -286,8 +318,11 @@ def user_details(request, uid):
 
 def get_coupon(uid):
     u = get_object_or_404(User, userid=uid)
+    mill = int(round(time.time() * 1000))
 
-    url1 = "http://app.follo.co.in/bollyapi/api/ChakDeVoucherList/getchakdevouchers"
+    url1 = "https://www.follo.mobi/bollyapi/api/ChakDeVoucherList/getchakdevouchers"
+    milli = int(round(time.time() * 1000))
+
     data1 = {
         "model": u.model,
         "appmode": u.appmode,
@@ -302,14 +337,18 @@ def get_coupon(uid):
     }
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
-                'host': 'app.follo.co.in',
+                'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
-                'accept-encoding': 'gzip'}
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
 
-    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
     json_data = json.loads(r.text)[0]
     print(json_data)
-    if (json_data["status"] == "OK"):
+    if json_data["status"] == "OK":
         for c in json_data["coupon"]:
             AliveVoucher.objects.get_or_create(userid=u, couponcode=c["couponcode"], coupondate=c["coupondate"])
 
@@ -319,7 +358,7 @@ def quizb20(request, uid):
 
     u = get_object_or_404(User, userid=uid)
 
-    url2 = "http://app.follo.co.in/bollyapi/api/tracking/logging"
+    url2 = "https://www.follo.mobi/bollyapi/api/tracking/logging"
     data2 = {
         "model": u.model,
         "userid": u.userid,
@@ -339,14 +378,19 @@ def quizb20(request, uid):
     }
     headers2 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
-                'host': 'app.follo.co.in',
+                'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
-                'accept-encoding': 'gzip'}
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(millis),
+                'ClientHash': enc(u.session + str(millis) + sec),
+                'SessionToken': u.session,
+                }
 
-    r = requests.post(url2, data=json.dumps(data2), headers=headers2)
+    r = requests.post(verify=False, url=url2, data=json.dumps(data2), headers=headers2)
 
-    url1 = "http://app.follo.co.in/bollyapi/api/tnfserver/getquestions"
+    url1 = "https://www.follo.mobi/bollyapi/api/tnfserver/getquestions"
 
+    milli = int(round(time.time() * 1000))
     data1 = {
         "model": u.model,
         "appmode": u.appmode,
@@ -362,10 +406,15 @@ def quizb20(request, uid):
     }
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
-                'host': 'app.follo.co.in',
+                'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
-                'accept-encoding': 'gzip'}
-    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
     json_data = json.loads(r.text)[0]
 
     data = [{
@@ -384,16 +433,13 @@ def quizb20(request, uid):
 
     timetaken = 0;
 
+    millis = int(round(time.time() * 1000))
+
     print(millis)
     questions = []
 
     q = {}
 
-    headers = {'content-type': 'application/json; charset=utf-8',
-               'connection': 'Keep-Alive',
-               'host': 'app.follo.co.in',
-               'user-agent': 'okhttp/3.2.0',
-               'accept-encoding': 'gzip'}
     # print(json_data["question"])
     for j in json_data["question"]:
         # print(j)
@@ -404,7 +450,7 @@ def quizb20(request, uid):
             ans = j["answer"]
         timetaken = timetaken + random.randint(2, 4)
         q = {"timeTaken": str(timetaken),
-             "quizid":j["quizid"],
+             "quizid": j["quizid"],
              "isattempt": "1",
              "points": j["points"],
              "sessionid": str(millis),
@@ -417,8 +463,16 @@ def quizb20(request, uid):
 
         if (int(j["answer"]) > 1):
             an = 0
-            if (j["question"] == j["relatedinfo"]) or (j["question"] == "True"):
+            if (j["question"] == j["relatedinfo"]) or (j["relatedinfo"] == "True"):
                 an = 1
+            elif (j["relatedinfo"] == ""):
+                try:
+                    x = AliveQuestions.objects.get(qid=j["questionid"])
+                    an = int(x.ans)
+                except AliveQuestions.DoesNotExist:
+                    an = 1
+            else:
+                an = 0
             q1 = {"timeTaken": str(timetaken),
                   "quizid": j["quizid"],
                   "isattempt": "1",
@@ -427,24 +481,57 @@ def quizb20(request, uid):
                   "questionid": j["questionid"],
                   "givenanswerid": str(an)
                   }
-            url3 = "http://app.follo.co.in/bollyapi/api/server/Answer"
+            print("\n\n\n*************************(  " + j["questionid"] + "  " + str(an))
+            url3 = "https://www.follo.mobi/bollyapi/api/server/Answer"
             data3 = [{"data": data, "questions": [q1]}]
+            milli = int(round(time.time() * 1000))
+            headers = {'content-type': 'application/json; charset=utf-8',
+                       'connection': 'Keep-Alive',
+                       'host': 'www.follo.mobi',
+                       'user-agent': 'okhttp/3.2.0',
+                       'accept-encoding': 'gzip',
+                       'TimeStamp': str(milli),
+                       'ClientHash': enc(u.session + str(milli) + sec),
+                       'SessionToken': u.session,
+                       }
 
-            r = requests.post(url3, data=json.dumps(data3), headers=headers)
+            r = requests.post(verify=False, url=url3, data=json.dumps(data3), headers=headers)
             json_data = json.loads(r.text)
+            if (json_data[0]["status"] == "OK"):
+                if (json_data[0]["msg1"] == "1"):
+                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+                else:
+                    if (an == 1):
+                        an = 0
+                    else:
+                        an = 1
+                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
             print(json_data)
+        else:
+            AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
 
-    url = "http://app.follo.co.in/bollyapi/api/server/complete"
+    url = "https://www.follo.mobi/bollyapi/api/server/complete"
     data1 = [{"data": data, "questions": questions}]
-    r2 = requests.post(url, data=json.dumps(data1), headers=headers)
-    return r2.text.encode("utf-8")
+    milli = int(round(time.time() * 1000))
+    headers = {'content-type': 'application/json; charset=utf-8',
+               'connection': 'Keep-Alive',
+               'host': 'www.follo.mobi',
+               'user-agent': 'okhttp/3.2.0',
+               'accept-encoding': 'gzip',
+               'TimeStamp': str(milli),
+               'ClientHash': enc(u.session + str(milli) + sec),
+               'SessionToken': u.session,
+               }
+    r2 = requests.post(verify=False, url=url, data=json.dumps(data1), headers=headers)
+    print(r2.text.encode("utf-8"))
+    return HttpResponse(r2.text)
 
 
 def q(uid):
-    millis = int(round(time.time() * 1000))
+    milli = int(round(time.time() * 1000))
 
     u = get_object_or_404(User, userid=uid)
-    url1 = "http://app.follo.co.in/bollyapi/api/tnf/getquestions"
+    url1 = "https://www.follo.mobi/bollyapi/api/tnf/getquestions"
 
     data1 = {
         "model": u.model,
@@ -461,13 +548,18 @@ def q(uid):
     }
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
-                'host': 'app.follo.co.in',
+                'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
-                'accept-encoding': 'gzip'}
-    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
     json_data = json.loads(r.text)[0]
 
-    url = "http://app.follo.co.in/bollyapi/api/server/complete"
+    url = "https://www.follo.mobi/bollyapi/api/server/complete"
 
     data = [{
         "model": u.model,
@@ -485,7 +577,7 @@ def q(uid):
 
     timetaken = 0;
 
-    print(millis)
+    print(milli)
     questions = []
 
     # print(json_data["question"])
@@ -502,7 +594,7 @@ def q(uid):
              "quizid": j["quizid"],
              "isattempt": "1",
              "points": j["points"],
-             "sessionid": str(millis),
+             "sessionid": str(milli),
              "questionid": j["questionid"],
              "givenanswerid": str(ans)
              }
@@ -511,21 +603,25 @@ def q(uid):
         questions.append(q)
     headers = {'content-type': 'application/json; charset=utf-8',
                'connection': 'Keep-Alive',
-               'host': 'app.follo.co.in',
+               'host': 'www.follo.mobi',
                'user-agent': 'okhttp/3.2.0',
-               'accept-encoding': 'gzip'}
+               'accept-encoding': 'gzip',
+               'TimeStamp': str(milli),
+               'ClientHash': enc(u.session + str(milli) + sec),
+               'SessionToken': u.session,
+               }
 
     data1 = [{"data": data, "questions": questions}]
 
-    r = requests.post(url, data=json.dumps(data1), headers=headers)
+    r = requests.post(verify=False, url=url, data=json.dumps(data1), headers=headers)
     print((r.text).encode("utf-8"))
 
 
-def bmsquizb20(request, uid):
+def bmsquizb201(request, uid):
     millis = int(round(time.time() * 1000))
 
     u = get_object_or_404(User, userid=uid)
-    url1 = "http://app.follo.co.in/bollyapi/api/quizcard/getquestions"
+    url1 = "https://www.follo.mobi/bollyapi/api/quizcard/getquestions"
 
     data1 = {
         "model": u.model,
@@ -540,15 +636,22 @@ def bmsquizb20(request, uid):
         "celebid": "0",
         "deviceid": u.deviceid
     }
+    milli = int(round(time.time() * 1000))
+
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
-                'host': 'app.follo.co.in',
+                'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
-                'accept-encoding': 'gzip'}
-    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
     json_data = json.loads(r.text)[0]
 
-    url = "http://app.follo.co.in/bollyapi/api/userresponse/answer"
+    url = "https://www.follo.mobi/bollyapi/api/userresponse/answer"
 
     data = [{
         "model": u.model,
@@ -589,20 +692,205 @@ def bmsquizb20(request, uid):
         questions.append(q)
     headers = {'content-type': 'application/json; charset=utf-8',
                'connection': 'Keep-Alive',
-               'host': 'app.follo.co.in',
+               'host': 'www.follo.mobi',
                'user-agent': 'okhttp/3.2.0',
-               'accept-encoding': 'gzip'}
+               'accept-encoding': 'gzip',
+               'TimeStamp': str(milli),
+               'ClientHash': enc(u.session + str(milli) + sec),
+               'SessionToken': u.session,
+               }
 
     data1 = [{"data": data, "questions": questions}]
 
-    r = requests.post(url, data=json.dumps(data1), headers=headers)
+    r = requests.post(verify=False, url=url, data=json.dumps(data1), headers=headers)
     print((r.text).encode("utf-8"))
     return HttpResponseRedirect(reverse("user_details", args=[uid]))
 
 
+def bmsquizb20(request, uid):
+    millis = int(round(time.time() * 1000))
+
+    u = get_object_or_404(User, userid=uid)
+
+    url2 = "https://www.follo.mobi/bollyapi/api/tracking/logging"
+    data2 = {
+        "model": u.model,
+        "userid": u.userid,
+        "ipaddress": ipadd,
+        "sessionid": str(millis),
+        "handsettype": u.handsettype,
+        "osversion": u.osversion,
+        "celebid": "",
+        "storyid": "",
+        "serviceid": "305",
+        "mode": u.appmode,
+        "version": u.appversion,
+        "deviceid": u.deviceid,
+        "source": "app",
+        "manufacture": u.manufacture,
+        "advid": u.advid
+    }
+    headers2 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'www.follo.mobi',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(millis),
+                'ClientHash': enc(u.session + str(millis) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url2, data=json.dumps(data2), headers=headers2)
+
+    # url1 = "https://www.follo.mobi/bollyapi/api/quizcard/getquestions"
+    url1 = "https://www.follo.mobi/bollyapi/api/fffquizserver/getquestions"
+    milli = int(round(time.time() * 1000))
+    data1 = {
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "osversion": u.osversion,
+        "celebid": "0",
+        "deviceid": u.deviceid
+    }
+    headers1 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'www.follo.mobi',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
+    json_data = json.loads(r.text)[0]
+
+    data = [{
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "osversion": u.osversion,
+        "deviceid": u.deviceid
+
+    }]
+
+    timetaken = 0;
+
+    millis = int(round(time.time() * 1000))
+
+    # print(millis)
+    questions = []
+
+    q = {}
+
+    # print(json_data["question"])
+    for j in json_data["question"]:
+        # print(j)
+        ans = 1
+        if (int(j["answer"]) > 1):
+            ans = ""
+        else:
+            ans = j["answer"]
+        timetaken = timetaken + random.randint(2, 4)
+        q = {"timeTaken": str(timetaken),
+             "quizid": j["quizid"],
+             "isattempt": "1",
+             "points": j["points"],
+             "sessionid": str(millis),
+             "questionid": j["questionid"],
+             "givenanswerid": str(ans)
+             }
+        # print("++++++++++++++++++++++++++++++++++++++++\n")
+        # print(q)
+        questions.append(q)
+        # AliveQuestions.objects.get_or_create(qid=j["questionid"],ans=j["answer"])
+        if (int(j["answer"]) > 1):
+            an = 0
+            opt = ""
+            try:
+                x = AliveQuestions.objects.get(qid=j["questionid"])
+                an = int(x.ans)
+                print("found " + j["questionid"] + "  " + str(an))
+            except:
+                for ri in j["option"]:
+                    a = j["relatedinfo"]
+                    opt = opt + "\n" + ri["id"] + "  " + ri["option"]
+                    if (ri["option"] in a):
+                        an = int(ri["id"])
+                if (an != 0):
+                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+                else:
+                    print(j["question"])
+                    print(opt)
+                    print(j["relatedinfo"])
+                    an = input()
+
+            q1 = {"timeTaken": str(timetaken),
+                  "quizid": j["quizid"],
+                  "isattempt": "1",
+                  "points": j["points"],
+                  "sessionid": str(millis),
+                  "questionid": j["questionid"],
+                  "givenanswerid": str(an)
+                  }
+            # url3 = "https://www.follo.mobi/bollyapi/api/server/Answer"
+            url3 = "https://www.follo.mobi/bollyapi/api/fffserver/Answer"
+
+            data3 = [{"data": data, "questions": [q1]}]
+            milli = int(round(time.time() * 1000))
+            headers = {'content-type': 'application/json; charset=utf-8',
+                       'connection': 'Keep-Alive',
+                       'host': 'www.follo.mobi',
+                       'user-agent': 'okhttp/3.2.0',
+                       'accept-encoding': 'gzip',
+                       'TimeStamp': str(milli),
+                       'ClientHash': enc(u.session + str(milli) + sec),
+                       'SessionToken': u.session,
+                       }
+
+            r = requests.post(verify=False, url=url3, data=json.dumps(data3), headers=headers)
+            json_data = json.loads(r.text)
+            if (json_data[0]["status"] == "OK"):
+                if (json_data[0]["msg1"] == "1"):
+                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+            print(json_data)
+        else:
+            # questions.append(q)
+            AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
+
+    # url = "https://www.follo.mobi/bollyapi/api/server/complete"
+    url = "https://www.follo.mobi/bollyapi/api/fffserver/complete"
+    data1 = [{"data": data, "questions": questions}]
+    milli = int(round(time.time() * 1000))
+    headers = {'content-type': 'application/json; charset=utf-8',
+               'connection': 'Keep-Alive',
+               'host': 'www.follo.mobi',
+               'user-agent': 'okhttp/3.2.0',
+               'accept-encoding': 'gzip',
+               'TimeStamp': str(milli),
+               'ClientHash': enc(u.session + str(milli) + sec),
+               'SessionToken': u.session,
+               }
+    r2 = requests.post(verify=False, url=url, data=json.dumps(data1), headers=headers)
+    print(r2.text.encode("utf-8"))
+    return HttpResponse(r2)
+
+
 def get_profile(uid):
     u = get_object_or_404(User, userid=uid)
-    url1 = "http://app.follo.co.in/bollyapi/api/profile/getprofile"
+    url1 = "https://www.follo.mobi/bollyapi/api/profile/getprofile"
+    milli = int(round(time.time() * 1000))
     data1 = {
         "model": u.model,
         "appmode": u.appmode,
@@ -617,18 +905,23 @@ def get_profile(uid):
     }
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
-                'host': 'app.follo.co.in',
+                'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
-                'accept-encoding': 'gzip'}
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
 
-    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
     json_data = json.loads(r.text)[0]
     print(json_data)
 
 
 def get_bmscoupon(uid):
+    milli = int(round(time.time() * 1000))
     u = get_object_or_404(User, userid=uid)
-    url1 = "http://app.follo.co.in/bollyapi/api/FFFVoucherList/getfffvouchers"
+    url1 = "https://www.follo.mobi/bollyapi/api/FFFVoucherList/getfffvouchers"
     data1 = {
         "model": u.model,
         "appmode": u.appmode,
@@ -641,25 +934,38 @@ def get_bmscoupon(uid):
         "osversion": u.osversion,
         "deviceid": u.deviceid
     }
-    headers1 = {'content-type': 'application/json; charset=utf-8',
-                'connection': 'Keep-Alive',
-                'host': 'app.follo.co.in',
+    headers1 = {'connection': 'Keep-Alive',
+                'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
-                'accept-encoding': 'gzip'}
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
 
-    r = requests.post(url1, data=json.dumps(data1), headers=headers1)
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
     json_data = json.loads(r.text)[0]
     print(json_data)
     if (json_data["status"] == "OK"):
         for c in json_data["coupon"]:
-            BMSVoucher.objects.get_or_create(userid=u, couponcode=c["couponcode"], coupondate=c["coupondate"])
+            try:
+                BMSVoucher.objects.get_or_create(userid=u, couponcode=c["couponcode"], coupondate=c["coupondate"])
+            except:
+                BMSVoucher.objects.get_or_create(userid=u, couponcode=c["couponcode"])
 
-# url2 = "http://app.follo.co.in/bollyapi/api/tracking/logging"
+
+def enc(str1):
+    md = hashlib.sha1()
+    print(str1.encode())
+    md.update(str1.encode())
+    return str(md.hexdigest())
+
+
+# url2 = "https://www.follo.mobi/bollyapi/api/tracking/logging"
 #     data2 = {
 #         "model":model,
 #         "userid": u.userid,
 #         "ipaddress":ipadd,
-#         "sessionid": str(int(round(time.time() * 1000))),
+#         "sessionid": str(milli),
 #         "handsettype": handsettype,
 #         "osversion": osversion,
 #         "celebid": "0",
@@ -674,12 +980,260 @@ def get_bmscoupon(uid):
 #     }
 #     headers2 = {'content-type': 'application/json; charset=utf-8',
 #                 'connection': 'Keep-Alive',
-#                 'host': 'app.follo.co.in',
+#                 'host': 'www.follo.mobi',
 #                 'user-agent': 'okhttp/3.2.0',
 #                 'accept-encoding': 'gzip'}
 #
 #
 #
-#     r = requests.post(url2, data=json.dumps(data2), headers=headers2)
+#     r = requests.post(verify=False,url=url2, data=json.dumps(data2), headers=headers2)
 #     json_data2 = json.loads(r.text)[0]
 #     print(json_data2)
+
+
+def submit_mob(request):
+    mobile = str(request.POST.get("mobile", "")).strip()
+    uid = int(request.POST.get("id", "").strip())
+    u = get_object_or_404(User, userid=uid)
+    coupons = AliveVoucher.objects.filter(userid=uid)
+    milli = int(round(time.time() * 1000))
+    url1 = "https://www.follo.mobi/bollyapi/api/profile/updateprofile"
+    data1 = {
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "osversion": u.osversion,
+        "deviceid": u.deviceid,
+        'mobile': mobile
+    }
+    headers1 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'www.follo.mobi',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
+    json_data = json.loads(r.text)[0]
+    print(json_data)
+    # return HttpResponseRedirect(reverse('index'))
+    return render(request, 'b20/user.html', {'user': u, 'coupons': coupons, 'mob': mobile})
+
+
+def submit_otp(request):
+    otp = request.POST.get("otp", "").strip()
+    uid = int(request.POST.get("id", "").strip())
+    mobile = str(request.POST.get("mobile", "")).strip()
+    u = get_object_or_404(User, userid=uid)
+    coupons = AliveVoucher.objects.filter(userid=uid)
+    milli = int(round(time.time() * 1000))
+    url1 = "https://www.follo.mobi/bollyapi/api/validate/OTP"
+    data1 = {
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "osversion": u.osversion,
+        "deviceid": u.deviceid,
+        'mobile': mobile,
+        "otp": otp
+    }
+    headers1 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'www.follo.mobi',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
+    json_data = json.loads(r.text)[0]
+    print(json_data)
+    # return HttpResponseRedirect(reverse('index'))
+    return render(request, 'b20/user.html', {'user': u, 'coupons': coupons})
+
+
+def konnect(request, uid):
+    millis = int(round(time.time() * 1000))
+
+    u = get_object_or_404(User, userid=uid)
+
+    url2 = "https://www.follo.mobi/bollyapi/api/tracking/logging"
+    data2 = {
+        "model": u.model,
+        "userid": u.userid,
+        "ipaddress": ipadd,
+        "sessionid": str(millis),
+        "handsettype": u.handsettype,
+        "osversion": u.osversion,
+        "celebid": "",
+        "storyid": "",
+        "serviceid": "305",
+        "mode": u.appmode,
+        "version": u.appversion,
+        "deviceid": u.deviceid,
+        "source": "app",
+        "manufacture": u.manufacture,
+        "advid": u.advid
+    }
+    headers2 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'www.follo.mobi',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(millis),
+                'ClientHash': enc(u.session + str(millis) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url2, data=json.dumps(data2), headers=headers2)
+
+    url1 = "https://www.follo.mobi/konnectapi/api/konnectquiz/getquestions"
+
+    milli = int(round(time.time() * 1000))
+    data1 = {
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "cityid": "2",
+        "osversion": u.osversion,
+        "celebid": "0",
+        "deviceid": u.deviceid
+    }
+    headers1 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'www.follo.mobi',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(milli),
+                'ClientHash': enc(u.session + str(milli) + sec),
+                'SessionToken': u.session,
+                }
+
+    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
+    json_data = json.loads(r.text)[0]
+
+    data = [{
+        "model": u.model,
+        "appmode": u.appmode,
+        "manufacture": u.manufacture,
+        "email": u.email,
+        "userid": u.userid,
+        "appversion": u.appversion,
+        "handsettype": u.handsettype,
+        "advid": u.advid,
+        "osversion": u.osversion,
+        "deviceid": u.deviceid
+
+    }]
+
+    timetaken = 0;
+
+    millis = int(round(time.time() * 1000))
+
+    print(millis)
+    questions = []
+
+    q = {}
+
+    # print(json_data["question"])
+    for j in json_data["question"]:
+        # print(j)
+        ans = 1
+        if (int(j["answer"]) > 1):
+            ans = ""
+        else:
+            ans = j["answer"]
+        timetaken = timetaken + random.randint(2, 4)
+        q = {"timeTaken": str(timetaken),
+             "quizid": j["quizid"],
+             "isattempt": "1",
+             "points": j["points"],
+             "sessionid": str(millis),
+             "questionid": j["questionid"],
+             "givenanswerid": str(ans)
+             }
+        # print("++++++++++++++++++++++++++++++++++++++++\n")
+        # print(q)
+        questions.append(q)
+
+        if (int(j["answer"]) > 1):
+            an = 0
+            if (j["question"] == j["relatedinfo"]) or (j["question"] == "True"):
+                an = 1
+            else:
+                try:
+                    x = AliveQuestions.objects.get(qid=j["questionid"])
+                    an = int(x.ans)
+                except AliveQuestions.DoesNotExist:
+                    an = 1
+            q1 = {"timeTaken": str(timetaken),
+                  "quizid": j["quizid"],
+                  "isattempt": "1",
+                  "points": j["points"],
+                  "sessionid": str(millis),
+                  "questionid": j["questionid"],
+                  "givenanswerid": str(an)
+                  }
+            url3 = "https://www.follo.mobi/bollyapi/api/server/Answer"
+            data3 = [{"data": data, "questions": [q1]}]
+            milli = int(round(time.time() * 1000))
+            headers = {'content-type': 'application/json; charset=utf-8',
+                       'connection': 'Keep-Alive',
+                       'host': 'www.follo.mobi',
+                       'user-agent': 'okhttp/3.2.0',
+                       'accept-encoding': 'gzip',
+                       'TimeStamp': str(milli),
+                       'ClientHash': enc(u.session + str(milli) + sec),
+                       'SessionToken': u.session,
+                       }
+
+            r = requests.post(verify=False, url=url3, data=json.dumps(data3), headers=headers)
+            json_data = json.loads(r.text)
+            if (json_data[0]["status"] == "OK"):
+                if (json_data[0]["msg1"] == "1"):
+                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+                else:
+                    if (an == 1):
+                        an = 0
+                    else:
+                        an = 1
+                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+            print(json_data)
+        else:
+            AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
+
+    url = "https://www.follo.mobi/konnectapi/api/konnectuserresponse/answer"
+    data1 = [{"data": data, "questions": questions}]
+    milli = int(round(time.time() * 1000))
+    headers = {'content-type': 'application/json; charset=utf-8',
+               'connection': 'Keep-Alive',
+               'host': 'www.follo.mobi',
+               'user-agent': 'okhttp/3.2.0',
+               'accept-encoding': 'gzip',
+               'TimeStamp': str(milli),
+               'ClientHash': enc(u.session + str(milli) + sec),
+               'SessionToken': u.session,
+               }
+    r2 = requests.post(verify=False, url=url, data=json.dumps(data1), headers=headers)
+    print(r2.text.encode("utf-8"))
+    return HttpResponse(r2.text)

@@ -27,6 +27,7 @@ class User(models.Model):
     logintype = models.CharField(default="FB",max_length=20)
     advid = models.CharField(max_length=40)
     createdate = models.DateTimeField(default=timezone.now)
+    session = models.CharField(blank=True,max_length=80)
 
     def __str__(self):  # __unicode__ on Python 2
         return str(self.userid)
@@ -52,3 +53,11 @@ class BMSVoucher(models.Model):
 
     def __str__(self):  # __unicode__ on Python 2
         return self.couponcode
+
+class AliveQuestions(models.Model):
+    qid=models.TextField(unique=True)
+    ans=models.TextField()
+
+
+    def __str__(self):  # __unicode__ on Python 2
+        return self.qid+" "+self.ans
