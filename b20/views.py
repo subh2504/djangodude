@@ -1,16 +1,16 @@
-from django.shortcuts import render, get_object_or_404
-from .models import User, AliveVoucher, BMSVoucher, AliveQuestions
-import requests
-from django.http import HttpResponse, HttpResponseRedirect
-import json
-import time
 import hashlib
-from django.core.urlresolvers import reverse
-# Create your views here.
-
-
+import json
 import string
+import time
+
+import requests
+from django.core import serializers
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render, get_object_or_404
+
 import random
+from .models import User, AliveVoucher, BMSVoucher, AliveQuestions
 
 
 def random_generator(size=6, chars=string.ascii_lowercase + string.digits):
@@ -122,16 +122,15 @@ sec = "SHRPAN2212VIK0312BHUPAR8762KLMBIJ87"
 
 
 def reg_user(request):
-    print("POST https://www.follo.mobi/bollyapi/api/login/appregister HTTP/1.1")
-    print("Content-Type: application/json; charset=utf-8")
-    print("Host: www.follo.mobi")
-    print("Connection: Keep-Alive")
-    print("User-Agent: okhttp/3.2.0")
-    print("Accept-Encoding: gzip")
-    print("\n\n")
-
-    j = request.POST.get("data", "")
-    j = json.loads(j)
+    idt = ""
+    if request.POST.get("id", "") == "":
+        j = request.POST.get("data", "")
+        j = json.loads(j)
+    else:
+        idt = request.POST.get("id", "")
+        j = serializers.serialize('json', [User.objects.get(userid=int(idt))])
+        j = json.loads(j)[0]["fields"]
+        print(j)
     model = j["model"]
     sex = j["sex"]
 
@@ -313,7 +312,7 @@ def user_details(request, uid):
     print(u.userid)
     winpin = BMSVoucher.objects.filter(userid=u)
     print(list(winpin))
-    return render(request, 'b20/user.html', {'user': u, 'coupons': coupons, 'winpin': winpin})
+    return render(request, 'b20/user.html', {'user': u, 'coupons': coupons[::-1], 'winpin': winpin[::-1]})
 
 
 def get_coupon(uid):
@@ -463,12 +462,14 @@ def quizb20(request, uid):
 
         if (int(j["answer"]) > 1):
             an = 0
-            if (j["question"] == j["relatedinfo"]) or (j["relatedinfo"] == "True"):
+            if (j["question"] in j["relatedinfo"]) or (j["relatedinfo"] == "True") or (
+                j["relatedinfo"] in j["question"]):
                 an = 1
             elif (j["relatedinfo"] == ""):
                 try:
                     x = AliveQuestions.objects.get(qid=j["questionid"])
                     an = int(x.ans)
+                    print("*******************\n**************\n******************")
                 except AliveQuestions.DoesNotExist:
                     an = 1
             else:
@@ -497,8 +498,8 @@ def quizb20(request, uid):
 
             r = requests.post(verify=False, url=url3, data=json.dumps(data3), headers=headers)
             json_data = json.loads(r.text)
-            if (json_data[0]["status"] == "OK"):
-                if (json_data[0]["msg1"] == "1"):
+            if json_data[0]["status"] == "OK":
+                if json_data[0]["msg1"] == "1":
                     AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
                 else:
                     if (an == 1):
@@ -785,7 +786,7 @@ def bmsquizb20(request, uid):
 
     }]
 
-    timetaken = 0;
+    timetaken = 1;
 
     millis = int(round(time.time() * 1000))
 
@@ -793,27 +794,15 @@ def bmsquizb20(request, uid):
     questions = []
 
     q = {}
-
+    ts = 0
     # print(json_data["question"])
     for j in json_data["question"]:
-        # print(j)
-        ans = 1
-        if (int(j["answer"]) > 1):
-            ans = ""
-        else:
-            ans = j["answer"]
-        timetaken = timetaken + random.randint(2, 4)
-        q = {"timeTaken": str(timetaken),
-             "quizid": j["quizid"],
-             "isattempt": "1",
-             "points": j["points"],
-             "sessionid": str(millis),
-             "questionid": j["questionid"],
-             "givenanswerid": str(ans)
-             }
+        timetaken = random.randint(1, 8)
+
         # print("++++++++++++++++++++++++++++++++++++++++\n")
         # print(q)
-        questions.append(q)
+
+        ans = 0;
         # AliveQuestions.objects.get_or_create(qid=j["questionid"],ans=j["answer"])
         if (int(j["answer"]) > 1):
             an = 0
@@ -826,29 +815,33 @@ def bmsquizb20(request, uid):
                 for ri in j["option"]:
                     a = j["relatedinfo"]
                     opt = opt + "\n" + ri["id"] + "  " + ri["option"]
-                    if (ri["option"] in a):
+                    if (ri["option"].lower() in a.lower()):
                         an = int(ri["id"])
-                if (an != 0):
-                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
-                else:
+                        break
+                if (an == 0):
                     print(j["question"])
                     print(opt)
                     print(j["relatedinfo"])
-                    an = input()
+                    an = input().strip()
+            ans = an
 
-            q1 = {"timeTaken": str(timetaken),
+            q1 = {
+                "timeTaken": str(timetaken),
                   "quizid": j["quizid"],
+                "totalquesattempt": "1",
+                "totalques": "10",
                   "isattempt": "1",
-                  "points": j["points"],
+                "totalscore": "1",
+                "points": j["points"],
                   "sessionid": str(millis),
                   "questionid": j["questionid"],
                   "givenanswerid": str(an)
                   }
             # url3 = "https://www.follo.mobi/bollyapi/api/server/Answer"
             url3 = "https://www.follo.mobi/bollyapi/api/fffserver/Answer"
-
             data3 = [{"data": data, "questions": [q1]}]
             milli = int(round(time.time() * 1000))
+
             headers = {'content-type': 'application/json; charset=utf-8',
                        'connection': 'Keep-Alive',
                        'host': 'www.follo.mobi',
@@ -867,9 +860,22 @@ def bmsquizb20(request, uid):
             print(json_data)
         else:
             # questions.append(q)
+            ans = j["answer"]
             AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
-
-    # url = "https://www.follo.mobi/bollyapi/api/server/complete"
+            # url = "https://www.follo.mobi/bollyapi/api/server/complete"
+        ts = ts + 1
+        q = {"timeTaken": str(timetaken),
+             "quizid": j["quizid"],
+             "isattempt": "1",
+             "totalquesattempt": "10",
+             "totalques": "10",
+             "totalscore": str(ts),
+             "points": j["points"],
+             "sessionid": str(millis),
+             "questionid": j["questionid"],
+             "givenanswerid": str(ans)
+             }
+        questions.append(q)
     url = "https://www.follo.mobi/bollyapi/api/fffserver/complete"
     data1 = [{"data": data, "questions": questions}]
     milli = int(round(time.time() * 1000))
@@ -948,7 +954,7 @@ def get_bmscoupon(uid):
     if (json_data["status"] == "OK"):
         for c in json_data["coupon"]:
             try:
-                BMSVoucher.objects.get_or_create(userid=u, couponcode=c["couponcode"], coupondate=c["coupondate"])
+                BMSVoucher.objects.get_or_create(userid=u, couponcode=c["couponcode"], coupondate=str(c["coupondate"]))
             except:
                 BMSVoucher.objects.get_or_create(userid=u, couponcode=c["couponcode"])
 
@@ -1025,7 +1031,7 @@ def submit_mob(request):
     json_data = json.loads(r.text)[0]
     print(json_data)
     # return HttpResponseRedirect(reverse('index'))
-    return render(request, 'b20/user.html', {'user': u, 'coupons': coupons, 'mob': mobile})
+    return HttpResponseRedirect(reverse('user_details', kwargs={'uid': u.userid}))
 
 
 def submit_otp(request):
@@ -1064,7 +1070,7 @@ def submit_otp(request):
     json_data = json.loads(r.text)[0]
     print(json_data)
     # return HttpResponseRedirect(reverse('index'))
-    return render(request, 'b20/user.html', {'user': u, 'coupons': coupons})
+    return HttpResponseRedirect(reverse('user_details', kwargs={'uid': u.userid}))
 
 
 def konnect(request, uid):

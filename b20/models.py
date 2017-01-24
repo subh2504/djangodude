@@ -47,7 +47,7 @@ class AliveVoucher(models.Model):
 class BMSVoucher(models.Model):
     userid = models.ForeignKey("User")
     couponcode=models.TextField(unique=True)
-    coupondate=models.DateField(null=True,max_length=20)
+    coupondate = models.CharField(null=True, max_length=40)
     #expirydate=models.CharField(null=True,max_length=20)
     used=models.BooleanField(default=False)
 

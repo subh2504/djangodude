@@ -25,7 +25,7 @@ SECRET_KEY = 'v)g&_2ws^nxo0!h^ee(@n8bv!zga4$^96)t0n($!_*%g!fd-p6'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["django-dude-subhashhardaha.c9users.io","subh2504.pythonanywhere.com"]
+ALLOWED_HOSTS = ["localhost", "django-dude-subhashhardaha.c9users.io", "subh2504.pythonanywhere.com"]
 
 
 # Application definition

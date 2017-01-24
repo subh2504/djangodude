@@ -16,7 +16,7 @@ for j in json_data["question"]:
     if (int(j["answer"]) > 1):
         an = 0
         opt = ""
-        if(j["question"].lower()==j["relatedinfo"].lower()):
+        if (j["question"].lower() == j["relatedinfo"].lower() or j["relatedinfo"] == "True"):
             ans=1
         else:
             ans=0

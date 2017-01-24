@@ -1,16 +1,8 @@
-import requests
 import json
-import time
-# Create your views here.
-#100_  288364922865768 0825999060 s67phvi7-dqah-94pd-qna4-ciu5tsbwsr0e
-
-#943787281493036 5398821586 59r1gyit-g57f-5p9p-sfjj-kpuv3dde6uzi
-#471886398278883 8908136787 4od3oxoq-4klh-8df2-f6vq-0rwibya3mjum  100
-#910521854886946 8845123545 1b605fa5-42b6-46d3-8847-e4def9d2318c  100
-#910521854886946 8845123546 1b605fa5-42b6-46d3-8847-e4def9d2318c  100
-#021866803190371 1550832019 3vgmuajk-l2ex-zj3n-puvm-z82cjtr42hxk
-
 import string
+
+import requests
+
 import random
 
 
@@ -215,3 +207,7 @@ def xyz():
     print(len(b))
     for i in b:
         print(i)
+
+# 679911718990675 4705792771 zawh4gk3-a1gu-7nqv-xlav-sku6mh3f2oee
+
+# 218148221683194 7954249561 rlcuhm3e-ssg2-79v9-7r6x-nv2vb8ji71lw
