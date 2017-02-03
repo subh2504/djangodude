@@ -11,5 +11,4 @@ def enc(str1):
 #amount=50.00&statusmessage=The+payment+has+been+successfully+collected&checksum=f03d111b97e3d7b02e1bbb25194f1498fafde6f4fadd28c569adb18a234ff710&mid=MBK7518&orderid=6DtArudG2EIecD&statuscode=0
 
 #print(enc("/L26wjbRzLKxSmXN9Zp9ilTrX3vxoRMdPILaq5ygLwt+ZdjUEpd2MQ=="+"1483113418162"+"SHRPAN2212VIK0312BHUPAR8762KLMBIJ87"))
-print(enc(
-    "XUnX1+xv9OiVUioCqje3F4PT332hEg582KTt1CS/XPK6YAvUnsKM0Q==" + "1484755552" + "SATPANYOG2212VIK0312BHUPAR8762VIKANUJ87"))
+print(enc("" + "1485615148483" + "SATPANYOG2212VIK0312BHUPAR8762VIKANUJ87"))

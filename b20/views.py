@@ -4,6 +4,7 @@ import string
 import time
 
 import requests
+import requests.packages.urllib3
 from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
@@ -12,6 +13,7 @@ from django.shortcuts import render, get_object_or_404
 import random
 from .models import User, AliveVoucher, BMSVoucher, AliveQuestions
 
+requests.packages.urllib3.disable_warnings()
 
 def random_generator(size=6, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -462,16 +464,20 @@ def quizb20(request, uid):
 
         if (int(j["answer"]) > 1):
             an = 0
-            if (j["question"] in j["relatedinfo"]) or (j["relatedinfo"] == "True") or (
-                j["relatedinfo"] in j["question"]):
-                an = 1
-            elif (j["relatedinfo"] == ""):
+            if (j["relatedinfo"] == ""):
                 try:
                     x = AliveQuestions.objects.get(qid=j["questionid"])
                     an = int(x.ans)
-                    print("*******************\n**************\n******************")
+                    print("*******************\nfound\n******************")
                 except AliveQuestions.DoesNotExist:
+                    print("*******************\n**************\n******************")
+                    print(j["question"])
+                    print(j["relatedinfo"])
                     an = 1
+            elif (j["question"] in j["relatedinfo"]) or (j["relatedinfo"] == "True") or (
+                        j["relatedinfo"] in j["question"]):
+                an = 1
+
             else:
                 an = 0
             q1 = {"timeTaken": str(timetaken),
@@ -507,6 +513,7 @@ def quizb20(request, uid):
                     else:
                         an = 1
                     AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+
             print(json_data)
         else:
             AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
@@ -576,7 +583,7 @@ def q(uid):
 
     }]
 
-    timetaken = 0;
+    timetaken = 0
 
     print(milli)
     questions = []
@@ -668,7 +675,7 @@ def bmsquizb201(request, uid):
 
     }]
 
-    ts = 0;
+    ts = 0
 
     print(millis)
     questions = []
@@ -786,7 +793,7 @@ def bmsquizb20(request, uid):
 
     }]
 
-    timetaken = 1;
+    timetaken = 1
 
     millis = int(round(time.time() * 1000))
 
@@ -802,27 +809,24 @@ def bmsquizb20(request, uid):
         # print("++++++++++++++++++++++++++++++++++++++++\n")
         # print(q)
 
-        ans = 0;
+        ans = 0
         # AliveQuestions.objects.get_or_create(qid=j["questionid"],ans=j["answer"])
-        if (int(j["answer"]) > 1):
+        if (int(j["answer"]) > 4):
             an = 0
             opt = ""
-            try:
-                x = AliveQuestions.objects.get(qid=j["questionid"])
-                an = int(x.ans)
-                print("found " + j["questionid"] + "  " + str(an))
-            except:
-                for ri in j["option"]:
-                    a = j["relatedinfo"]
-                    opt = opt + "\n" + ri["id"] + "  " + ri["option"]
-                    if (ri["option"].lower() in a.lower()):
-                        an = int(ri["id"])
-                        break
-                if (an == 0):
-                    print(j["question"])
-                    print(opt)
-                    print(j["relatedinfo"])
-                    an = input().strip()
+
+            for ri in j["option"]:
+                a = j["relatedinfo"]
+                opt = opt + "\n" + ri["id"] + "  " + ri["option"]
+                if (ri["option"].lower() in a.lower()):
+                    an = int(ri["id"])
+                    break
+            if (an == 0):
+                print(j["question"])
+                print(j["answer"])
+                print(opt)
+                print(j["relatedinfo"])
+                an = input().strip()
             ans = an
 
             q1 = {
@@ -854,14 +858,14 @@ def bmsquizb20(request, uid):
 
             r = requests.post(verify=False, url=url3, data=json.dumps(data3), headers=headers)
             json_data = json.loads(r.text)
-            if (json_data[0]["status"] == "OK"):
-                if (json_data[0]["msg1"] == "1"):
-                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+            # if (json_data[0]["status"] == "OK"):
+            #    if (json_data[0]["msg1"] == "1"):
+            #       AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
             print(json_data)
         else:
             # questions.append(q)
             ans = j["answer"]
-            AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
+            # AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
             # url = "https://www.follo.mobi/bollyapi/api/server/complete"
         ts = ts + 1
         q = {"timeTaken": str(timetaken),
@@ -1152,7 +1156,7 @@ def konnect(request, uid):
 
     }]
 
-    timetaken = 0;
+    timetaken = 0
 
     millis = int(round(time.time() * 1000))
 
@@ -1169,7 +1173,7 @@ def konnect(request, uid):
             ans = ""
         else:
             ans = j["answer"]
-        timetaken = timetaken + random.randint(2, 4)
+        timetaken = timetaken + random.randint(1, 3)
         q = {"timeTaken": str(timetaken),
              "quizid": j["quizid"],
              "isattempt": "1",
@@ -1187,11 +1191,12 @@ def konnect(request, uid):
             if (j["question"] == j["relatedinfo"]) or (j["question"] == "True"):
                 an = 1
             else:
-                try:
-                    x = AliveQuestions.objects.get(qid=j["questionid"])
-                    an = int(x.ans)
-                except AliveQuestions.DoesNotExist:
-                    an = 1
+                # try:
+                #     x = AliveQuestions.objects.get(qid=j["questionid"])
+                #     an = int(x.ans)
+                # except AliveQuestions.DoesNotExist:
+                #     an = 1
+                an =1
             q1 = {"timeTaken": str(timetaken),
                   "quizid": j["quizid"],
                   "isattempt": "1",
@@ -1217,16 +1222,18 @@ def konnect(request, uid):
             json_data = json.loads(r.text)
             if (json_data[0]["status"] == "OK"):
                 if (json_data[0]["msg1"] == "1"):
-                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+                    # AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+                    pass
                 else:
                     if (an == 1):
                         an = 0
                     else:
                         an = 1
-                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+                        #AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
             print(json_data)
         else:
-            AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
+            # AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
+            pass
 
     url = "https://www.follo.mobi/konnectapi/api/konnectuserresponse/answer"
     data1 = [{"data": data, "questions": questions}]
