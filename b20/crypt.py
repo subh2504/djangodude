@@ -1,0 +1,65 @@
+import base64
+import binascii
+import hashlib
+import json
+import secrets
+
+from Crypto.Cipher import AES
+
+
+class AESCipher:
+    def __init__(self, key, iv):
+        self.bs = 16
+        self.key = key.encode()
+        self.iv = iv.encode()
+
+    def encrypt(self, raw):
+        BS = 16
+        pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+        unpad = lambda s: s[:-ord(s[len(s) - 1:])]
+        raw = pad(raw)
+        cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
+        return base64.b64encode(cipher.encrypt(raw.encode()))
+
+    def decrypt(self, enc):
+        BS = 16
+        pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+        unpad = lambda s: s[:-ord(s[len(s) - 1:])]
+        enc = base64.b64decode(enc)
+        cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
+        return unpad(cipher.decrypt(enc))
+
+
+def enc64(str1, l):
+    a = str1.encode()
+    md = hashlib.sha256(str1.encode("UTF-8"))
+    return binascii.hexlify(md.digest()).decode('ascii')[:l]
+
+
+def getIV():
+    iv = secrets.token_hex(8)
+    return iv
+
+
+key = enc64("vMge/yGen0gHaL42wrJi62n8BUnuo8R043XBeDRtUnnEjjTtUt3fag==", 32)
+iv = '4202791f8c788da6'
+data = "eKEoZWXmOVlZ+z8Ysi6/J/9Khtlg2N02SrhIwQgaBPAHKbcviAmGoM1VeV300OM2UXO+XEZ3yYMgv9Q3QDduPZrPvvfgerp9mXTV/b7sB3FFI2R7Gztg6x/tvQk9J0aHDGiMqezLyZJYobpgiKgRUSU0L3ZAx/wKs4MhAVkAu2iqGoBGm3tyOY9qJPGv5G1EuJGPGT1q8U4WgcIIRH5Efqr0+9Npkl6c9Bbl5/8rTo87KgZ2OvuNhiI1+OI/LyU6yNRvXOGz4eMvYPLbV126s+t7PAYCGT4OsD34A2mhHO7qoVgko5J/KgHfUamSUI/CUys9e7GFc1pI90w4hGD6qzHCSRN6rVyxhkoqCXWJtH21r3Tu/LzQTWt6MXDk5p6sI3F1klKEjrOSDuNCeQ/4HgWeg8InefEKEMjiGLrnsCoFLSiMrKejZAJidbE9Sl49mrbjc14/YQJge1h9mFB8K2D0Ejtnssjg2Pl90nNo6lJbCTHNVV6qEGx2SNadaCIpl6PYNRx3zEZj2klGp8ZkCk6OI7Z7582wTUI6mUH4UDJ0Mpnip1VcwjZQbwwbPWvzJ10pGFIzSwY8xnAd/uMbKeUDQcaHVyncRvRSBj/yL5byy/B/g8RjJoBp2LxlVDSXTvhq4145nLiJLFSMo5XwXOD2gN91ZjuLaAT4esi1pTVTz68bMwJQyPgkays2Y1n0oIefayJtxFZHirP6jJWjueWbRJQJ2o3f0PUX+FRx7inohkrzDvQjhpHu8J88EdZauUMCoXN2pHgBlInlUMzRqbxePhNiIb+jXP2yRpAUcfUqwufTV6svI6vUvzcfFg/hWxpjCjxa345hW7FN5uNTtwrdOm1mtSG03IEamOdJ+tGZWWsfTQKRuCGPMaKm0flFMjtExtsf5wdFViYTUNNHi0huCVv60irANFmecHJxPZSVDCNki93MaVSz7ZgZ8mGhb5XfGikTpFi2v0iVPk3FbXb4pkGAWQ6R+XRfWh0nXhwF/+PY07DnxGTw9fjjhX0smbAifklHP/FtXZ8BOPcXQiIsxdjpIIWKxUqbJTpn5r2M49+vOADKjR5ST2DhO+MvXoUIbXg7bqnWoomdPO6b+je3pENxExrvCWsx8X0d2hgXamn37XXv03W4E5rIM26Sc4wiD26lIdbrfHcRiq1t5TV50AmK5OjaFlZvj8kKMXmQRm60EBqyGYmW/5DIIeayXlodjFjK3lyFSEIg77YIPId2gmNTP5zMhbBiKMVrjqSTlU0iF4pkkKspAhb0rN4q/7D6Iru+VUJDE/pqlRp1LLvDDTYXq+KDq9NVinBVeRfM6FapAHmsx0Wm7owxYqfBcjpppoNJPSMH3kgeRfzpbDAGG3WOotsIyA/s3+6GMoN+XUOyoo7xbJofsjwQSIfFM1UrEKdHIin60OA8NZQh14p7xXskDeM9rfbzdErm2IFm6cDEl+3H8ISBd2lpHO7vKpCkJRnDQrnhf+BHahgNBfNjLg6hBcHtvbHn88amHBmCTBSZoqUeYq9sp3Nrst2KsQ5CzyvJMc9TynIly9PsTFwqaSJVnATmiGT8HgjkPR2LMdDbt0m0w+2w8rN8Cw0DjadBUsDAl5E7aMbaMNubvr5wHF5xJaH0gBS+P0ZegUrzqllQ1DV/h1e/7KwEWvAkO1InZpwW7u5XmoaeBFFGArW2qBQ5XI6DWoBYwUqjPHej0yC6LaJr0UzhhPqvNj1ezjW8PV7L6fHM6CTmRLICdFRUXd+Wk29yuRJ7w6v6CCEo6PzWv37NHd/JxUAE6mMKPwBWSi5vSpKccQlJT7MRvlEtBE7bNqi+wLTOFHdV2JgHho9vQ0CyFsMrkh9yu3rPuZCiS/RnQU3ntqZWnTpOtALY+Z3XLv4R3LDu5AFelDNTb5XZwoN8WLPGkzYm/z/E6mvMQgQU3jU2phd4uuRVDs8A39iwwJPmpad+4c9r9kaeDLL9q8r08bNg3Vl9qaGMdZ7Qq5RE+8yez9zUDz1MtbySRbfnn7R2gDHi1tbzuHr+sXK7EZooY55M3oSa3bz86gm20eLm3jrBpoiSPx2oycMIA9CURt5uOSZ9Pfs/hrKUt/HNH+ID1AKIf6ptLpoB12ZjnGlbh7O2H1fYuViXumaviyQZo5WKdpXpBi+UUSEz0/SNQpEUIOUZuHJAiVnSRNKR1WE0ppLdyYGiY+tJNgubxly4FaA6O8ipUtQJSWOrckhtE7ZYz/L9WxOlfGMPOGWtwuY7lkzmcOvpL3JIS21ejpWSfK3ofjz3GjzwlhMWsKc1HSajtRsEB3/JGPPfaR7WEsqblSO6bfkFOcsOHYs4FgkssaljE5wSm6ArPGW88C72nbqcwER07WN8lC5FXPV6HbcW92Q0WBiaHOfuU21IO13UihQE8ExjrjptknQ5arBrL8gdZvUA0s8bvHWF6v1wKhCZ9XZx81vokIlX9pAL4bx7Bm8w0Q7ZNYRwPZdBmBY3c/Wj/CYuSXxcRz1BskCAUvDYvvvCckkFw8WED850OpmFRlJZcLGuVqxSuIfPGL6bqwo3kWsBZp8i0BPmtcSgyndxzBBImJXjfi9ogAdIdkyTQls6UAAAUeapUCSLG+NwKg40tQjCHMVebRhrA3q5gldIr0au7xoSSV5pWiHbBxSyBQLdKQCd0B1ixXpwOAlpTAtnHKordX/Dpf4+BApI/S+fHcD2Oc7swn6leH7565dKCqnfG0FOchIV+RTOQ/t2ViAcF6nqbBF1KawWwlydv4HDY4zRybEl2STGbjflvTRTtVxkG3ObQMxHn3hfp8bn/dTc4+No7gFy12EA3A8sHDb7w33YrVljGyO02Plhu5452/GAmzqKXL9uiBa4a7Mc0fb+7hp2f/md2oMpAAfj19A7vD8ML6YQWKWMCa+U7sMBLQ6AKXnC0ktDyz0QQE7HyCOly43un0hF2Hn56kNR9pxvseyg6bIi+8OE8IMPJiqmYoZpg9gzYzaw1Tp4vjgrFFrloy3nA0uNzcouF4cOSKCTEwQMSTocRu83yf4bl1+uI60BrnZeUX0jUNcvX1Q1iIKp24/AYnJlgjdPjtREmdAYtUmWcRAb4j7F8OBgBEQOku/96vp9RUgd1+yGx0YNf4VBX4tyDPcmkXRLdLNFNIqKyIK1Bi2j07bSKMLJBeX+XVQVQEI2uOaGelOOLgI79vOspCqyINmj4CVRjmMhdSgkCSmvWW2JTV8TfTFc+dqRwB9Vb6Nr99aySxpRtWn+PjWyJ49NHZrl+5N306VDbP4TUvyKZBruxim36W8U2MA6CwrQ+VI/wpZKQWHCMta1kMTpW7uDkArHlTu8C6gIv1EvYdXDIFjmczg7JQOqLRJVnq5/Ko7pwWPO8gRVO8fmLL8n00Oef4b1zIWN2Z2UL1mJ4KM9UIx0rZuPJiQflFk3zgN4X+fAcxrZWj9ALF614hyoHhpD8D90Icc7i8RePRKgNrqzKno/lH0VRQfzuNareeEa+cbcwvMH00aUeeTRtYLWYcUBF7qF2qjkk2HkLqwzcF93uXp4WvfrMpsRHEHcoqqDLW8ewK70H27DlK8xdcPFo67R8Q9E48VD0gHBSsCLJHG4ZcIl0r9EFkBPzt31xE0dtsKs2Lfj8aevi8V0FhLfZEhTbCHtcwgZdu28aSz8qzMDE83AplSjQeFf4RnvFIRJQtSdaXFXqGPsLlA6sPnJMAIGxK2EmPQT4r3OCO/RKIHfC+FMb/ayASOF4/AozbeK5F8KbP6BUwW+bp0EjlUR1whp4X9TIo4AE1eu28nfBEARBTK4z3WV3RgtsiwyaueHkdnvQZpu6oGjKV9qyS5pt5vDtBz8rXfK73Y7XYpPyyciPaeh9IzgzjTAWY20iALGnZv3OSFKNVAy+c7MEr0+XvGgz9NYBp15DD8wywqw/0mLCixaxLFuRc+GcO4UHSZaWNI2cnkNRwfzmIASOMVYuxpnjtO/QxdkbbmGuANeYaiKTveQK3UtMV1xtcsxHn5H1sOyRercXii2WPwxCWKW/IwB+BXaZ2Pl2jrCyuIHYwm+9ToI/wdkATa2Rw40AG6ZCGZALzMhbVjQsmTlsYer2UMNFVV7to/Eukklnd+EhtdXv/C+XhmcN+r9HLu2WVjJpQ5PrQybnaCOXWIvj5Qxa1FaVgWJ4j5zYNP3pLr9/B2wrvfUX+7MGYit1KB93ErNLl6C8rBJAUSrXUBlKqJYy7KYp3dkYwHMCNpZdSAPw5p4dBQDTRCyWIEoQ5Y4l2Od7tQHG/lRGSeY3+f1YQ/7yjrWsTUXEd36b9Zk5Td/v0zv9SE4InK/smUZqJbFuPcCKwdoVEvVXDkpYdyYodqtq14rZ4O+5aJgX0hE/RJYLTQTQkAJVkxSXYI6Nf4Wt/nrZWrn5lFl9caEP/V4Spco9ybEedfXFLjZYXfyYe1giLMLVuoqUiMwy6mGLgJ1NIpWxTzAHNG3XbAykRAAUpfkEqEU5FxmbIvGtwZCbzffGRL090El1pB7DRYQPK049+w7YoJ2eXHs+aikRilMtQxamSgQCMKyb7sUAXGTWed/3mOQAxl3JO8obAUzzKG5pxFhMNQ6JXhVnaOaobDFkH31SiT5HAoEt6PangA4rF03A8HfML50laDzLCwqMIuBCz8qYfCpGwOlvXZQsKW7rRaDVX2NdcEPP6ZKf4RLIIrvdP7I//Hlr6Zt0SWxuXFH2T0iGcWRj4qXloepXu4C201ua2k43wfIPYJUFmdrop2siOkaHlwl/G9vpm11dRnvyQxyQ310+OAVzbm8Lo1o0INZyPSQcotq7AgBcMIAuhxkn+YPmQdSL68TA+L7lOK3YfrOkD9uxmJzhMFgSrEDvfDo/hZfbCI/99yLCRj46NxVqVAmM1DyLLVoGAWoKb7p3GB5l7nr28K1YMvf8AHgOPyZ/FxIWvEn6mp+zAeoAoyou0CM0OVTv4/Lvt3AG4nAk/n6Q6QXi//FlNEyBHdCasjEc/dkJOJVxBPGq1OXZEzlemvRYl/AE3UAFDZZmr6WOaCWfspmesMrfeYcD/FNmg6TjLXIETZcQZWhybLT4gViib8p9hiGicCwgxthb3v+5qyqhI7anoVn+cmnyF25xRiGrt072x8EJAKCA60q499RSksjlLBmWMdgS2d7LrekjFEb4V6x8zBIrGg1XSLD/BU+XwPQs5ZDVEdgjrZ6cSSi5k/8yc9+JwnWBC59KMQk3Glkpiu+GJZU0HPlKYGE63L26n0uGAYpXfxnYIPWya+2tQMi8KBkWZLChxE/X35t7BMJ1ZybLguc8ZL7PhV1hfoDFK95MmMfwJYD1vb7g1XX4qbwQKVM1Qms7BFykIaxz5ZQJTP9BJ4+S5eB0VtH1B15OnBNXO+t3iHeFg8g91gKBPeVwwv+/Sr4mxZW7uyefctzBJzZaZkgyezNiqxSkDoPtw6xkGPJQ9bgyJNH1POxnGWTRYGh4VnjrrKKZNmI93L/pwgva1oXYaAZ62gbh0jUKerKNwcHjluLPLTeDqFnbUp9MZtW0fYyMdY27ecbBeVJz4W2qfm8VE+xd7XuawQ8//iExyr7HprBmW3eKeqjRO6M18dep76mlsbgQzQw7Xvv326n7OaR6v40aSGcZ3LIMbU89dLGHVFGVQMOwElItPR8l449bg9Slh+ppPjxGjCpcq1XEs7bRJIz+WF3rMoSXH4oUQICp4UDOojRhwV9nDVqbb2ZyS+bq9mGCpXgA0J+1DQussgV17SEt8Jzhn48RYzEjUQAkDUBnbbe2kKUEvQUg8unSb+bdgTDpFdHPl+x0QXfur9dmIxY5tzbEK5csMldDPuGP407mNJfyHZPGGH/vKRuOzczKlN4ls/xwWrscfFuqiN2u+RN+swaLqGLjPezvgLGhqbaS4hcgcrioxV8EvktY0Mm4U61vLErDrVk8AvdsPGQ42w/OxomeLc72rwWlXg2PtzcSVegzCznSwoR6Ydd6FvcB6llq+Shma+mbW9t2SEebRvw28c4ue4v59ulbAmxXA8XuUoLqY+gLFC3wK7hVi0yUzqtsRvRGHzvvADCWlbmr5aWz9GhBw8pxyqrkplpJ354XL629JtE73Rs40LGYusEaf+UTsHmrTiES+5fT4BX8b8mTuIX0bu+nJM5nAZllIzymFh4/jJO4iUAz4jrplAnIMRVkApJM36iRaQW4/MPZ8Ey7btjIaF9s6RTQFGdomA09mOb/7/zG+NTvCtx6hLFN2oEm9bDYq520tHbOSMnUjAdR6aNxSnRb+//2fG93yUiXBkZTanhWIJZVM7C+rviWmzANYq/RCtfR+VbIk6ySOurnAYka8Sxc7vRynYD+OaQY643P+4mF5CL49HTo/C8wjd9onVoI9uOVl9RTxpMZkD1YOtH/SCLy1SXplQY6eTILsfJfZxZPBxZXeu/swj7USdxD33b0XPJrJrHGhZkjHJFJOIQro/JKHcS+RYCLvqMjRuch5ilNZM20Oqo8hhfpvc9Qto98D50OegWZY41l2wPpHbAIOMyW5Z7vkPA9YspNfYMSvLbHcqHlGNBvdwc2JHjaeau6k4lZPVpQ3XnH4j3YWMVvrjgIVhwYxweujPU/3X6QLgTbmM7KbPcQv6qcxTx9bpjBVCeaZJ4i/ISvU0EBTwTxWBY+bHD2wYmfBXbROI9qfJIve/XCOtH17ADlvEdOkFb12wJqQ/LxM4C5SQVTNwD6IQume82AJ/NRe8vK0bPcLACW1cvIb0X27WbewzAL30eOE5SC2RUOvbQeX8FUr//vJyDLPfJmIGMNTFn4dQSPAWbwvPPKHuYDfmNsGwG9d0e51rCbUY48ZCooPGogEt0ijPuoJ2FRQ5thX0AZcV7eutm0OVz2ez3fvFesdoMJ6NFkH378LmFyVYmVoh3yoNZQ1eMZ275W4ReiZQKxg3jfBweCRQVN4moC6GVbdz2hqXiD8S5Iatsu/LlNRicIy7hw/8fHS6Us+OlaVpr5Y3T8jiyMDkU2x2Wwis9cEkLq1XeoZagFzzAWA3bPBo0fKm32yr/5KRSXIBUwYxsMFqAdb7SGIjuHJHKIr/9Q63oVU8wr/6d2d5t4FZJ0hcLlBSqbsNBBcXjWSJITP6ti77Xv2v6aSUzCtGJjkVmHGZZ4cw1bPoyBhWemOv2PD7L+HWUePVgglvb2NFIJSEa95aPZj86K6VprQD1/ulaHR4FXU5f4oI+zu9aW5H014Ruij5Yv6K8pJK1Lc9ZJQrWqn0bxiWsM9rE/xQer+sAJtjCdXHrqISr7kYwT0EpbwCRf12yIU7QVP29awqJVUDWKx6+BqlKjRg/AymGsUAugrxKToLXytspwTeTpE64H77dgsd2kT/85aMI7LXaiod5xOWgbU48WHpCtlxZmBfS4lfP0gHHgKaBhxN5+uF5m/Tq4m/6dcPiRK0tivBO8pLjhHEFZ+oenVxGGmG26pG0lhBnsKkropP5tKLH3DQboHLg8bBa1w2M6XW/cHJlcpejQvTg8OSjZtfDjRiA7l01qyb+4VIc/UQ4tb8Pl7ohzM6/iwDmLf81jI3laCJ5kwBP8cySW/Wpb1HSq56MnhNI59jw0RBTyQSVHOdJqFUXcTjZ9MdpVPsU6DrSsh8GZQwE9OQdn2EeXcmfjIPoqhrs9hRX5guEX74s5/u+vPtz2tScw+UinQF6g2M8BcjvINxFD4uO40xrFKwuxOh7Bg/2jIWh4xQGRJ5qcva/SEXKeAE450lkVNOeNm/08yyYJyflGT+x3PhUgJEYyxKcX46wLXKGKgbNfV0td8C4xFFevLse/FvApK1lv2SR0BIe9eeJJLA7YXoesE385v5aN0lnBGw4mfxADr0aQVil8LfWeHCaYWrVHcV5grYJseltP8cXG/XmxDOa8VAhKOTLAPYrw81MxsILabZVdNDeVgygh5NC0Rwmkr+JvcuGezdBW8HAsrvspZ/YCieeu2ScMknOhanuXA56dbLsbKghsnrpia2F+UIdzS7neNSarCzAm2703NPkvd+NrD0otSE3OhFXssRQF3vnhMP6Kq+Gk3f5SLCg79eRn1/BP1ve+nPdRBM03cPAZ9Uni07DNw72GnKDmYHW8YV4NVErovBV5atfjlQehBh68+t2VHZs2gnMKy+8ZHtcVIutxRYgDvaCkHxaJv4ympowMeJZkg9BbThLjM80UMC+PV4q3ulUBYknPl9cFsEkEAbpw4X07ahU4r0+wsMgefNyO+aqbTPCF9cOfTVaOrGMW7JQS2gKVKT6pF4kbFmvmj2uyNYMnNf9WombkGkMUHkyiuVaqhLgyphI/0b1s6x53U+zLcSz3WzNC9jZcMClK6sUCxxTV6cISLThjg45OMgyLpcYImxtzZXkQYGrJMPqvTEVIT+szaFjWiSUxb4wAE6bZxus/T2n8cm8ctmrmy9j25G3xzWDn6/pnHB37bBEmG5rZezI/YeZwpPPFkBg9n37fS1Yso1PTQdWdKLVjKvZF4RKjup/v5YUT5PMfpCsgiNYe9Ocu3HTNAa2wVJkMKHsH+Ig2KLsrwhhhdO8+8IBnxQLaST/OwwiOhv3Z6YhhY1h5BRbrs97A5Kj4sEAw6PWZIjWtLi04q/XlWkaKpZjN3OMK2X0DQah17zAjgwNzr7JhWI5y7E/MYAqsZ9W+G5EcGUX7c4cUJUpxw=="
+data1 = {"model": "HM 1S",
+         "appmode": "AND",
+         "manufacture": "Xiaomi",
+         "email": "nilayrai250401@gmail.com",
+         "userid": "847767",
+         "appversion": "3.0.0",
+         "language": "en",
+         "handsettype": "xhdpi",
+         "advid": "3e86a4ea-aaa3-450e-8aa5-bd0fb5853595",
+         "osversion": "4.4.4",
+         "celebid": "0",
+         "deviceid": "179253570687532"}
+a = AESCipher(key, iv)
+# phrase = {"data": "none"}
+cryp = AESCipher(key, iv)
+eTxt = cryp.encrypt(str(json.dumps(data1)))
+dTxt = cryp.decrypt(data)
+print(str(dTxt))
+print(json.loads(dTxt))

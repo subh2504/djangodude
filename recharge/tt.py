@@ -1,9 +1,11 @@
 import json
+import random
 import string
 
 import requests
 
-import random
+
+# 179253570687517 9958115447 9kcv7kva-78fl-yswf-sue3-dxbys9mb6cux
 
 
 def random_generator(size=6, chars=string.ascii_lowercase + string.digits):
@@ -16,6 +18,9 @@ advertiserId = str(random_generator(8) + "-" + random_generator(4) + "-" + rando
 #deviceId="200790378610362"
 #mobile="8601186468"
 #advertiserId="fzlqqmsn-07aq-faar-6j9e-uk7a8seottzr"
+
+#179253570687517 9958115447 9kcv7kva-78fl-yswf-sue3-dxbys9mb6cux
+
 androidId = random_generator(16)
 print(deviceId, mobile, advertiserId, otp)
 

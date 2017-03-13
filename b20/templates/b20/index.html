@@ -98,9 +98,20 @@
     <input type="textbox" name="data">
   </form>
 
+    <form action="{% url 're_reg_all' %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-default">Auto Re Register</button>
+
+    </form>
+
+    <form action="{% url 'get_all_coupons' %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-default">Get All Coupons</button>
+
+    </form>
 
 
-<hr>
+    <hr>
   <h2>Registered Users</h2>
   <p></p>
   <div class="table-responsive">

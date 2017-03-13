@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>DjangoDude B20</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+
+    </center>
+
+    <hr>
+
+    <br>
+    <br>
+    <h2>B20 All Coupons Vouchers Response</h2>
+    <p></p>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>User Id</th>
+                <th>Response</th>
+
+            </tr>
+            </thead>
+            <tbody>
+            {% for r in resp %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><a href={% url 'user_details' uid=r.userid %}>
+                    {{ r.userid }} </a></td>
+                <td>{{ r.msg }}</td>
+                <td>
+
+                    <form action="{% url 'reg_user' %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-default">Re Register</button>
+                        <input type="hidden" name="id" value="{{r.userid}}">
+                    </form>
+                </td>
+
+
+            </tr>
+
+            {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+    <hr>
+    <h2>WinPin Coupons</h2>
+    <p></p>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>User Id</th>
+                <th>Coupon Code</th>
+                <th>Coupon Date</th>
+
+            </tr>
+            </thead>
+            <tbody>
+            {% for c in winpin %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ c.userid.userid }}</td>
+                <td>{{ c.couponcode }}</td>
+                <td>{{ c.coupondate }}</td>
+
+
+            </tr>
+
+            {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+</body>
+</html>
+

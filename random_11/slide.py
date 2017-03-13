@@ -1,7 +1,7 @@
 import json
 
 import requests
-from requests.auth import HTTPBasicAuth
+
 
 def login():
     url = "https://slide-api.42.company/api/v1/entries?sim_operator_name=DEFACE&network_operator_name=DEFACE&connected_network_type=wifi"

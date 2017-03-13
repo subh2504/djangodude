@@ -132,22 +132,21 @@ def addVoucher(coupon):
     d1 = {
         "emailId": "sonika2504@gmail.com",
         "ssoId": "e388f7hbqyspfjhkw8msfj7qm",
-        "deviceId": "ebfb7a4d385785a8",
+        "deviceId": "b583139d1ab67a4",
         "ipAddress": "10.0.2.15",
         "timestamp": str(millis),
         "gcId": coupon
     }
 
-    d2 = {
-        "emailId": "skhdroid@gmail.com",
-        "ssoId": "crik0nzhjowt77uu3rf8kak09",
-        "deviceId": "50c21ec8f685f42",
-        "ipAddress": "10.0.2.156",
-        "timestamp": str(millis),
-        "gcId": coupon
-    }
+    d1 = {"emailId": "skhdroid@gmail.com",
+          "ssoId": "crik0nzhjowt77uu3rf8kak09",
+          "deviceId": "aafd2ffebb8fa15a",
+          "ipAddress": "10.0.2.16",
+          "timestamp": "1489421133034",
+          "gcId": coupon
+          }
 
-    d = {
+    d1 = {
         "emailId": "santasecret2504@gmail.com",
         "ssoId": "auksga8p534mcnzj3ip47denr",
         "deviceId": "7ccc2474dbedec81",
@@ -156,7 +155,16 @@ def addVoucher(coupon):
         "gcId": coupon
     }
 
-    data = d["ssoId"] + "|" + d["emailId"] + "|" + "7000765815|" + "-1.0|" + d["timestamp"]
+    d = {
+        "emailId": "subhashhardaha@gmail.com",
+        "ssoId": "83fn6j46j2ddk0w0ehi5pd5v8",
+        "deviceId": "39073ea55a80b1b9",
+        "ipAddress": "10.0.2.155",
+        "timestamp": "1489082296152",
+        "gcId": coupon
+    }
+
+    data = d["ssoId"] + "|" + d["emailId"] + "|" + "7415842094|" + "-1.0|" + d["timestamp"]
     print(data)
 
     th = sha512(data)

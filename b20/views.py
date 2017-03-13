@@ -1,19 +1,23 @@
 import hashlib
 import json
+import random
 import string
 import time
+from builtins import print
 
 import requests
 import requests.packages.urllib3
 from django.core import serializers
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
+from django.http import QueryDict
 from django.shortcuts import render, get_object_or_404
 
-import random
-from .models import User, AliveVoucher, BMSVoucher, AliveQuestions
+from b20.crypt import getIV, enc64, AESCipher
+from .models import User, AliveVoucher, BMSVoucher
 
 requests.packages.urllib3.disable_warnings()
+
 
 def random_generator(size=6, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -186,6 +190,7 @@ def reg_user(request):
     }
     milli = int(round(time.time() * 1000))
     print(data)
+    iv = ""
     headers = {'content-type': 'application/json; charset=utf-8',
                'connection': 'Keep-Alive',
                'host': 'www.follo.mobi',
@@ -194,6 +199,7 @@ def reg_user(request):
                'TimeStamp': str(milli),
                'ClientHash': enc(u.session + str(milli) + sec),
                'SessionToken': u.session,
+               'IVToken': iv,
                }
 
     r = requests.post(verify=False, url=url, data=json.dumps(data), headers=headers)
@@ -259,6 +265,7 @@ def reg_user(request):
                 'TimeStamp': str(milli),
                 'ClientHash': enc(u.session + str(milli) + sec),
                 'SessionToken': u.session,
+                'ivToken': "",
                 }
 
     r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
@@ -308,7 +315,7 @@ def user_details(request, uid):
     u = get_object_or_404(User, userid=uid)
     get_coupon(uid)
     get_profile(uid)
-    get_bmscoupon(uid)
+    # get_bmscoupon(uid)
     coupons = AliveVoucher.objects.filter(userid=u)
     print(list(coupons))
     print(u.userid)
@@ -317,11 +324,36 @@ def user_details(request, uid):
     return render(request, 'b20/user.html', {'user': u, 'coupons': coupons[::-1], 'winpin': winpin[::-1]})
 
 
+def get_all_coupons(request):
+    users = User.objects.all()
+    x = []
+    for u in users:
+        r = q(u.userid)
+        x.append({"userid": u.userid, "msg": str(r)})
+    return render(request, 'b20/all_coupon.html', {'resp': x})
+
+
+def re_reg_all(request):
+    users = User.objects.all()
+    x = []
+    for u in users:
+        q = QueryDict('id=' + str(u.userid), mutable=True)
+        request.POST = q
+        reg_user(request)
+    return HttpResponse("Success")
+
+
 def get_coupon(uid):
     u = get_object_or_404(User, userid=uid)
+
+    iv = getIV()
+    key = enc64(u.session, 32)
+    print("Key get_coupon  " + key)
+    print("IV Token get_coupon  " + iv)
+
     mill = int(round(time.time() * 1000))
 
-    url1 = "https://www.follo.mobi/bollyapi/api/ChakDeVoucherList/getchakdevouchers"
+    url1 = "https://www.follo.mobi/bollyapi/api/ChakDeVoucherListNew/getchakdevouchers"
     milli = int(round(time.time() * 1000))
 
     data1 = {
@@ -342,12 +374,20 @@ def get_coupon(uid):
                 'user-agent': 'okhttp/3.2.0',
                 'accept-encoding': 'gzip',
                 'TimeStamp': str(milli),
+                'IVToken': iv,
                 'ClientHash': enc(u.session + str(milli) + sec),
                 'SessionToken': u.session,
                 }
 
-    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
-    json_data = json.loads(r.text)[0]
+    r = requests.post(verify=False, url=url1, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers1)
+    print(r.text)
+    print(dict(r.headers))
+    iv_n = r.headers["IVToken"]
+
+    print("IV get_coupon " + iv_n)
+    d = AESCipher(key, iv_n).decrypt(r.text)
+    print("Data get_coupon  " + str(d))
+    json_data = json.loads(d)[0]
     print(json_data)
     if json_data["status"] == "OK":
         for c in json_data["coupon"]:
@@ -362,7 +402,7 @@ def quizb20(request, uid):
     url2 = "https://www.follo.mobi/bollyapi/api/tracking/logging"
     data2 = {
         "model": u.model,
-        "userid": u.userid,
+        "userid": str(u.userid),
         "ipaddress": ipadd,
         "sessionid": str(millis),
         "handsettype": u.handsettype,
@@ -377,19 +417,26 @@ def quizb20(request, uid):
         "manufacture": u.manufacture,
         "advid": u.advid
     }
+    iv = ""
     headers2 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
                 'host': 'www.follo.mobi',
                 'user-agent': 'okhttp/3.2.0',
                 'accept-encoding': 'gzip',
                 'TimeStamp': str(millis),
+                'IVToken': iv,
                 'ClientHash': enc(u.session + str(millis) + sec),
                 'SessionToken': u.session,
+
                 }
 
     r = requests.post(verify=False, url=url2, data=json.dumps(data2), headers=headers2)
 
-    url1 = "https://www.follo.mobi/bollyapi/api/tnfserver/getquestions"
+    url1 = "https://www.follo.mobi/bollyapi/api/tnfServerNew/getquestions"
+    iv = getIV()
+    key = enc64(u.session, 32)
+    print("Key quiz20  " + key)
+    print("IV Token quiz20  " + iv)
 
     milli = int(round(time.time() * 1000))
     data1 = {
@@ -397,13 +444,14 @@ def quizb20(request, uid):
         "appmode": u.appmode,
         "manufacture": u.manufacture,
         "email": u.email,
-        "userid": u.userid,
+        "userid": str(u.userid),
         "appversion": u.appversion,
         "handsettype": u.handsettype,
         "advid": u.advid,
         "osversion": u.osversion,
         "celebid": "0",
-        "deviceid": u.deviceid
+        "deviceid": u.deviceid,
+        "language": "en",
     }
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
@@ -411,19 +459,25 @@ def quizb20(request, uid):
                 'user-agent': 'okhttp/3.2.0',
                 'accept-encoding': 'gzip',
                 'TimeStamp': str(milli),
+                'IVToken': iv,
                 'ClientHash': enc(u.session + str(milli) + sec),
-                'SessionToken': u.session,
+                'SessionToken': u.session
                 }
 
-    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
-    json_data = json.loads(r.text)[0]
+    r = requests.post(verify=False, url=url1, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers1)
+
+    # print("Data quiz20" + str(r.content))
+    iv_n = r.headers["IVToken"]
+    d = AESCipher(key, iv_n).decrypt(r.text)
+    # print("Data2 quiz20" + str(d))
+    json_data = json.loads(d)[0]
 
     data = [{
         "model": u.model,
         "appmode": u.appmode,
         "manufacture": u.manufacture,
         "email": u.email,
-        "userid": u.userid,
+        "userid": str(u.userid),
         "appversion": u.appversion,
         "handsettype": u.handsettype,
         "advid": u.advid,
@@ -465,15 +519,11 @@ def quizb20(request, uid):
         if (int(j["answer"]) > 1):
             an = 0
             if (j["relatedinfo"] == ""):
-                try:
-                    x = AliveQuestions.objects.get(qid=j["questionid"])
-                    an = int(x.ans)
-                    print("*******************\nfound\n******************")
-                except AliveQuestions.DoesNotExist:
-                    print("*******************\n**************\n******************")
-                    print(j["question"])
-                    print(j["relatedinfo"])
-                    an = 1
+
+                print("*******************\n**************\n******************")
+                print(j["question"])
+                print("\t**" + j["relatedinfo"])
+                an = "1"
             elif (j["question"] in j["relatedinfo"]) or (j["relatedinfo"] == "True") or (
                         j["relatedinfo"] in j["question"]):
                 an = 1
@@ -489,9 +539,10 @@ def quizb20(request, uid):
                   "givenanswerid": str(an)
                   }
             print("\n\n\n*************************(  " + j["questionid"] + "  " + str(an))
-            url3 = "https://www.follo.mobi/bollyapi/api/server/Answer"
+            url3 = "https://www.follo.mobi/bollyapi/api/serverNew/Answer"
             data3 = [{"data": data, "questions": [q1]}]
             milli = int(round(time.time() * 1000))
+            iv = getIV()
             headers = {'content-type': 'application/json; charset=utf-8',
                        'connection': 'Keep-Alive',
                        'host': 'www.follo.mobi',
@@ -500,27 +551,33 @@ def quizb20(request, uid):
                        'TimeStamp': str(milli),
                        'ClientHash': enc(u.session + str(milli) + sec),
                        'SessionToken': u.session,
+                       'IVToken': iv,
                        }
 
-            r = requests.post(verify=False, url=url3, data=json.dumps(data3), headers=headers)
-            json_data = json.loads(r.text)
-            if json_data[0]["status"] == "OK":
-                if json_data[0]["msg1"] == "1":
-                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
-                else:
-                    if (an == 1):
-                        an = 0
-                    else:
-                        an = 1
-                    AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+            r = requests.post(verify=False, url=url3, data=AESCipher(key, iv).encrypt(json.dumps(data3)),
+                              headers=headers)
+            # json_data = json.loads(r.text)
+            # if json_data[0]["status"] == "OK":
+            #     if json_data[0]["msg1"] == "1":
+            #         AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+            #     else:
+            #         if (an == 1):
+            #             an = 0
+            #         else:
+            #             an = 1
+            #         AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
 
-            print(json_data)
-        else:
-            AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
+            iv_n = r.headers["IVToken"]
+            d = AESCipher(key, iv_n).decrypt(r.text)
+            # print("Quest  " + str(d))
+            print(str(d))
+            # else:
+            # AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
 
-    url = "https://www.follo.mobi/bollyapi/api/server/complete"
+    url = "https://www.follo.mobi/bollyapi/api/serverNew/complete"
     data1 = [{"data": data, "questions": questions}]
     milli = int(round(time.time() * 1000))
+    iv = getIV();
     headers = {'content-type': 'application/json; charset=utf-8',
                'connection': 'Keep-Alive',
                'host': 'www.follo.mobi',
@@ -529,30 +586,76 @@ def quizb20(request, uid):
                'TimeStamp': str(milli),
                'ClientHash': enc(u.session + str(milli) + sec),
                'SessionToken': u.session,
+               'IVToken': iv,
                }
-    r2 = requests.post(verify=False, url=url, data=json.dumps(data1), headers=headers)
-    print(r2.text.encode("utf-8"))
-    return HttpResponse(r2.text)
+    print(str(json.dumps(data1)))
+    r2 = requests.post(verify=False, url=url, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers)
+
+    iv_n = r.headers["IVToken"]
+    d = AESCipher(key, iv_n).decrypt(r2.content)
+    print("*" * 8 + d.decode("utf-8"))
+    x = d.decode("utf-8")
+    return HttpResponse(x.encode("utf-8"))
 
 
 def q(uid):
-    milli = int(round(time.time() * 1000))
+    millis = int(round(time.time() * 1000))
 
     u = get_object_or_404(User, userid=uid)
-    url1 = "https://www.follo.mobi/bollyapi/api/tnf/getquestions"
 
+    url2 = "https://www.follo.mobi/bollyapi/api/tracking/logging"
+    data2 = {
+        "model": u.model,
+        "userid": str(u.userid),
+        "ipaddress": ipadd,
+        "sessionid": str(millis),
+        "handsettype": u.handsettype,
+        "osversion": u.osversion,
+        "celebid": "",
+        "storyid": "",
+        "serviceid": "305",
+        "mode": u.appmode,
+        "version": u.appversion,
+        "deviceid": u.deviceid,
+        "source": "app",
+        "manufacture": u.manufacture,
+        "advid": u.advid
+    }
+    iv = ""
+    headers2 = {'content-type': 'application/json; charset=utf-8',
+                'connection': 'Keep-Alive',
+                'host': 'www.follo.mobi',
+                'user-agent': 'okhttp/3.2.0',
+                'accept-encoding': 'gzip',
+                'TimeStamp': str(millis),
+                'IVToken': iv,
+                'ClientHash': enc(u.session + str(millis) + sec),
+                'SessionToken': u.session,
+
+                }
+
+    r = requests.post(verify=False, url=url2, data=json.dumps(data2), headers=headers2)
+
+    url1 = "https://www.follo.mobi/bollyapi/api/tnfServerNew/getquestions"
+    iv = getIV()
+    key = enc64(u.session, 32)
+    print("Key quiz20  " + key)
+    print("IV Token quiz20  " + iv)
+
+    milli = int(round(time.time() * 1000))
     data1 = {
         "model": u.model,
         "appmode": u.appmode,
         "manufacture": u.manufacture,
         "email": u.email,
-        "userid": u.userid,
+        "userid": str(u.userid),
         "appversion": u.appversion,
         "handsettype": u.handsettype,
         "advid": u.advid,
         "osversion": u.osversion,
         "celebid": "0",
-        "deviceid": u.deviceid
+        "deviceid": u.deviceid,
+        "language": "en",
     }
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
@@ -560,21 +663,25 @@ def q(uid):
                 'user-agent': 'okhttp/3.2.0',
                 'accept-encoding': 'gzip',
                 'TimeStamp': str(milli),
+                'IVToken': iv,
                 'ClientHash': enc(u.session + str(milli) + sec),
-                'SessionToken': u.session,
+                'SessionToken': u.session
                 }
 
-    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
-    json_data = json.loads(r.text)[0]
+    r = requests.post(verify=False, url=url1, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers1)
 
-    url = "https://www.follo.mobi/bollyapi/api/server/complete"
+    # print("Data quiz20" + str(r.content))
+    iv_n = r.headers["IVToken"]
+    d = AESCipher(key, iv_n).decrypt(r.text)
+    # print("Data2 quiz20" + str(d))
+    json_data = json.loads(d)[0]
 
     data = [{
         "model": u.model,
         "appmode": u.appmode,
         "manufacture": u.manufacture,
         "email": u.email,
-        "userid": u.userid,
+        "userid": str(u.userid),
         "appversion": u.appversion,
         "handsettype": u.handsettype,
         "advid": u.advid,
@@ -583,32 +690,104 @@ def q(uid):
 
     }]
 
-    timetaken = 0
+    timetaken = 0;
 
-    print(milli)
+    millis = int(round(time.time() * 1000))
+
+    print(millis)
     questions = []
 
+    q = {}
+
     # print(json_data["question"])
+    try:
+        json_data["question"]
+    except:
+        print("Error + " + str(json_data))
+        return json_data
+
     for j in json_data["question"]:
         # print(j)
-        timetaken = timetaken + random.randint(2, 4)
         ans = 1
         if (int(j["answer"]) > 1):
             ans = ""
         else:
-            ans = 0
-
+            ans = j["answer"]
+        timetaken = timetaken + random.randint(2, 4)
         q = {"timeTaken": str(timetaken),
              "quizid": j["quizid"],
              "isattempt": "1",
              "points": j["points"],
-             "sessionid": str(milli),
+             "sessionid": str(millis),
              "questionid": j["questionid"],
              "givenanswerid": str(ans)
              }
         # print("++++++++++++++++++++++++++++++++++++++++\n")
         # print(q)
         questions.append(q)
+
+        if (int(j["answer"]) > 1):
+            an = 0
+            if (j["relatedinfo"] == ""):
+
+                print("*******************\n**************\n******************")
+                print(j["question"])
+                print("\t**" + j["relatedinfo"])
+                an = "1"
+            elif (j["question"] in j["relatedinfo"]) or (j["relatedinfo"] == "True") or (
+                        j["relatedinfo"] in j["question"]):
+                an = 1
+
+            else:
+                an = 0
+            q1 = {"timeTaken": str(timetaken),
+                  "quizid": j["quizid"],
+                  "isattempt": "1",
+                  "points": j["points"],
+                  "sessionid": str(millis),
+                  "questionid": j["questionid"],
+                  "givenanswerid": str(an)
+                  }
+            print("\n\n\n*************************(  " + j["questionid"] + "  " + str(an))
+            url3 = "https://www.follo.mobi/bollyapi/api/serverNew/Answer"
+            data3 = [{"data": data, "questions": [q1]}]
+            milli = int(round(time.time() * 1000))
+            iv = getIV()
+            headers = {'content-type': 'application/json; charset=utf-8',
+                       'connection': 'Keep-Alive',
+                       'host': 'www.follo.mobi',
+                       'user-agent': 'okhttp/3.2.0',
+                       'accept-encoding': 'gzip',
+                       'TimeStamp': str(milli),
+                       'ClientHash': enc(u.session + str(milli) + sec),
+                       'SessionToken': u.session,
+                       'IVToken': iv,
+                       }
+
+            r = requests.post(verify=False, url=url3, data=AESCipher(key, iv).encrypt(json.dumps(data3)),
+                              headers=headers)
+            # json_data = json.loads(r.text)
+            # if json_data[0]["status"] == "OK":
+            #     if json_data[0]["msg1"] == "1":
+            #         AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+            #     else:
+            #         if (an == 1):
+            #             an = 0
+            #         else:
+            #             an = 1
+            #         AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+
+            iv_n = r.headers["IVToken"]
+            d = AESCipher(key, iv_n).decrypt(r.text)
+            # print("Quest  " + str(d))
+            print(str(d))
+            # else:
+            # AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
+
+    url = "https://www.follo.mobi/bollyapi/api/serverNew/complete"
+    data1 = [{"data": data, "questions": questions}]
+    milli = int(round(time.time() * 1000))
+    iv = getIV();
     headers = {'content-type': 'application/json; charset=utf-8',
                'connection': 'Keep-Alive',
                'host': 'www.follo.mobi',
@@ -617,12 +796,15 @@ def q(uid):
                'TimeStamp': str(milli),
                'ClientHash': enc(u.session + str(milli) + sec),
                'SessionToken': u.session,
+               'IVToken': iv,
                }
+    r2 = requests.post(verify=False, url=url, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers)
 
-    data1 = [{"data": data, "questions": questions}]
-
-    r = requests.post(verify=False, url=url, data=json.dumps(data1), headers=headers)
-    print((r.text).encode("utf-8"))
+    iv_n = r.headers["IVToken"]
+    d = AESCipher(key, iv_n).decrypt(r2.content)
+    print("*" * 8 + d.decode("utf-8"))
+    x = d.decode("utf-8")
+    return x
 
 
 def bmsquizb201(request, uid):
@@ -717,8 +899,11 @@ def bmsquizb201(request, uid):
 
 def bmsquizb20(request, uid):
     millis = int(round(time.time() * 1000))
-
     u = get_object_or_404(User, userid=uid)
+    iv = getIV()
+    key = enc64(u.session, 32)
+    print("Key bmsquizb20  " + key)
+    print("IV bmsquizb20  " + iv)
 
     url2 = "https://www.follo.mobi/bollyapi/api/tracking/logging"
     data2 = {
@@ -751,7 +936,7 @@ def bmsquizb20(request, uid):
     r = requests.post(verify=False, url=url2, data=json.dumps(data2), headers=headers2)
 
     # url1 = "https://www.follo.mobi/bollyapi/api/quizcard/getquestions"
-    url1 = "https://www.follo.mobi/bollyapi/api/fffquizserver/getquestions"
+    url1 = "https://www.follo.mobi/bollyapi/api/fffQuizNew/getquestions"
     milli = int(round(time.time() * 1000))
     data1 = {
         "model": u.model,
@@ -764,7 +949,8 @@ def bmsquizb20(request, uid):
         "advid": u.advid,
         "osversion": u.osversion,
         "celebid": "0",
-        "deviceid": u.deviceid
+        "deviceid": u.deviceid,
+        "language": "en"
     }
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
@@ -774,10 +960,15 @@ def bmsquizb20(request, uid):
                 'TimeStamp': str(milli),
                 'ClientHash': enc(u.session + str(milli) + sec),
                 'SessionToken': u.session,
+                'IVToken': iv,
                 }
 
-    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
-    json_data = json.loads(r.text)[0]
+    r = requests.post(verify=False, url=url1, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers1)
+    iv_n = r.headers["IVToken"]
+    print("IV_q bmsquizb20 " + iv_n)
+    d = AESCipher(key, iv_n).decrypt(r.text)
+    print("Data_q bmsquizb20  " + str(d))
+    json_data = json.loads(d)[0]
 
     data = [{
         "model": u.model,
@@ -789,7 +980,8 @@ def bmsquizb20(request, uid):
         "handsettype": u.handsettype,
         "advid": u.advid,
         "osversion": u.osversion,
-        "deviceid": u.deviceid
+        "deviceid": u.deviceid,
+        "language": "en"
 
     }]
 
@@ -831,18 +1023,18 @@ def bmsquizb20(request, uid):
 
             q1 = {
                 "timeTaken": str(timetaken),
-                  "quizid": j["quizid"],
+                "quizid": j["quizid"],
                 "totalquesattempt": "1",
                 "totalques": "10",
-                  "isattempt": "1",
+                "isattempt": "1",
                 "totalscore": "1",
                 "points": j["points"],
-                  "sessionid": str(millis),
-                  "questionid": j["questionid"],
-                  "givenanswerid": str(an)
-                  }
+                "sessionid": str(millis),
+                "questionid": j["questionid"],
+                "givenanswerid": str(an)
+            }
             # url3 = "https://www.follo.mobi/bollyapi/api/server/Answer"
-            url3 = "https://www.follo.mobi/bollyapi/api/fffserver/Answer"
+            url3 = "https://www.follo.mobi/bollyapi/api/fffQuizServerNew/Answer"
             data3 = [{"data": data, "questions": [q1]}]
             milli = int(round(time.time() * 1000))
 
@@ -852,12 +1044,18 @@ def bmsquizb20(request, uid):
                        'user-agent': 'okhttp/3.2.0',
                        'accept-encoding': 'gzip',
                        'TimeStamp': str(milli),
+                       'IVToken': iv,
                        'ClientHash': enc(u.session + str(milli) + sec),
                        'SessionToken': u.session,
                        }
 
-            r = requests.post(verify=False, url=url3, data=json.dumps(data3), headers=headers)
-            json_data = json.loads(r.text)
+            r = requests.post(verify=False, url=url3, data=AESCipher(key, iv).encrypt(json.dumps(data3)),
+                              headers=headers)
+            iv_n = r.headers["IVToken"]
+            print("IV_ps bmsquizb20 " + iv_n)
+            d = AESCipher(key, iv_n).decrypt(r.text)
+            print("Data_ps bmsquizb20  " + str(d))
+            json_data = json.loads(d)
             # if (json_data[0]["status"] == "OK"):
             #    if (json_data[0]["msg1"] == "1"):
             #       AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
@@ -880,7 +1078,7 @@ def bmsquizb20(request, uid):
              "givenanswerid": str(ans)
              }
         questions.append(q)
-    url = "https://www.follo.mobi/bollyapi/api/fffserver/complete"
+    url = "https://www.follo.mobi/bollyapi/api/fffQuizServerNew/complete"
     data1 = [{"data": data, "questions": questions}]
     milli = int(round(time.time() * 1000))
     headers = {'content-type': 'application/json; charset=utf-8',
@@ -888,18 +1086,28 @@ def bmsquizb20(request, uid):
                'host': 'www.follo.mobi',
                'user-agent': 'okhttp/3.2.0',
                'accept-encoding': 'gzip',
+               'IVToken': iv,
                'TimeStamp': str(milli),
                'ClientHash': enc(u.session + str(milli) + sec),
                'SessionToken': u.session,
                }
-    r2 = requests.post(verify=False, url=url, data=json.dumps(data1), headers=headers)
-    print(r2.text.encode("utf-8"))
-    return HttpResponse(r2)
+    r2 = requests.post(verify=False, url=url, data=AESCipher(key, iv).encrypt(raw=json.dumps(data1)), headers=headers)
+    iv_n = r.headers["IVToken"]
+    print("IV_pa bmsquizb20 " + iv_n)
+    d = AESCipher(key, iv_n).decrypt(r.text)
+    print("Data_pa bmsquizb20  " + str(d))
+    print(d)
+    return HttpResponse(d)
 
 
 def get_profile(uid):
     u = get_object_or_404(User, userid=uid)
-    url1 = "https://www.follo.mobi/bollyapi/api/profile/getprofile"
+    iv = getIV()
+    key = enc64(u.session, 32)
+    print("Key get_profile  " + key)
+    print("IV Token get_profile  " + iv)
+
+    url1 = "https://www.follo.mobi/bollyapi/api/profileNew/getprofile"
     milli = int(round(time.time() * 1000))
     data1 = {
         "model": u.model,
@@ -920,18 +1128,28 @@ def get_profile(uid):
                 'accept-encoding': 'gzip',
                 'TimeStamp': str(milli),
                 'ClientHash': enc(u.session + str(milli) + sec),
+                "IVToken": iv,
                 'SessionToken': u.session,
                 }
 
-    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
-    json_data = json.loads(r.text)[0]
+    r = requests.post(verify=False, url=url1, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers1)
+    iv_n = r.headers["IVToken"]
+    print("IV get_profile " + iv_n)
+    d = AESCipher(key, iv_n).decrypt(r.text)
+    print("Data get_profile  " + str(d))
+
+    json_data = json.loads(d)[0]
     print(json_data)
 
 
 def get_bmscoupon(uid):
     milli = int(round(time.time() * 1000))
     u = get_object_or_404(User, userid=uid)
-    url1 = "https://www.follo.mobi/bollyapi/api/FFFVoucherList/getfffvouchers"
+    iv = getIV()
+    key = enc64(u.session, 32)
+    print("Key get_bmscoupon  " + key)
+    print("IV Token get_bmscoupon  " + iv)
+    url1 = "https://www.follo.mobi/bollyapi/api/FFFVoucherListNew/getfffvouchers"
     data1 = {
         "model": u.model,
         "appmode": u.appmode,
@@ -950,10 +1168,16 @@ def get_bmscoupon(uid):
                 'TimeStamp': str(milli),
                 'ClientHash': enc(u.session + str(milli) + sec),
                 'SessionToken': u.session,
+                'IVToken': iv,
                 }
 
-    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
-    json_data = json.loads(r.text)[0]
+    r = requests.post(verify=False, url=url1, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers1)
+
+    iv_n = r.headers["IVToken"]
+    print("IV get_bmscoupon " + iv_n)
+    d = AESCipher(key, iv_n).decrypt(r.text)
+    print("Data get_bmscoupon  " + str(d))
+    json_data = json.loads(d)[0]
     print(json_data)
     if (json_data["status"] == "OK"):
         for c in json_data["coupon"]:
@@ -965,7 +1189,6 @@ def get_bmscoupon(uid):
 
 def enc(str1):
     md = hashlib.sha1()
-    print(str1.encode())
     md.update(str1.encode())
     return str(md.hexdigest())
 
@@ -1005,9 +1228,14 @@ def submit_mob(request):
     mobile = str(request.POST.get("mobile", "")).strip()
     uid = int(request.POST.get("id", "").strip())
     u = get_object_or_404(User, userid=uid)
+    iv = getIV()
+    key = enc64(u.session, 32)
+    print("Key submit_mob  " + key)
+    print("IV Token submit_mob  " + iv)
+
     coupons = AliveVoucher.objects.filter(userid=uid)
     milli = int(round(time.time() * 1000))
-    url1 = "https://www.follo.mobi/bollyapi/api/profile/updateprofile"
+    url1 = "https://www.follo.mobi/bollyapi/api/profileNew/updateprofile"
     data1 = {
         "model": u.model,
         "appmode": u.appmode,
@@ -1019,7 +1247,8 @@ def submit_mob(request):
         "advid": u.advid,
         "osversion": u.osversion,
         "deviceid": u.deviceid,
-        'mobile': mobile
+        'mobile': mobile,
+        'language': 'en'
     }
     headers1 = {'content-type': 'application/json; charset=utf-8',
                 'connection': 'Keep-Alive',
@@ -1029,10 +1258,16 @@ def submit_mob(request):
                 'TimeStamp': str(milli),
                 'ClientHash': enc(u.session + str(milli) + sec),
                 'SessionToken': u.session,
+                'IVToken': iv,
                 }
 
-    r = requests.post(verify=False, url=url1, data=json.dumps(data1), headers=headers1)
-    json_data = json.loads(r.text)[0]
+    r = requests.post(verify=False, url=url1, data=AESCipher(key, iv).encrypt(json.dumps(data1)), headers=headers1)
+
+    iv_n = r.headers["IVToken"]
+    print("IV submit_mob " + iv_n)
+    d = AESCipher(key, iv_n).decrypt(r.text)
+    print("Data submit_mob  " + str(d))
+    json_data = json.loads(d)[0]
     print(json_data)
     # return HttpResponseRedirect(reverse('index'))
     return HttpResponseRedirect(reverse('user_details', kwargs={'uid': u.userid}))
@@ -1196,7 +1431,7 @@ def konnect(request, uid):
                 #     an = int(x.ans)
                 # except AliveQuestions.DoesNotExist:
                 #     an = 1
-                an =1
+                an = 0
             q1 = {"timeTaken": str(timetaken),
                   "quizid": j["quizid"],
                   "isattempt": "1",
@@ -1229,7 +1464,7 @@ def konnect(request, uid):
                         an = 0
                     else:
                         an = 1
-                        #AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
+                        # AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=str(an))
             print(json_data)
         else:
             # AliveQuestions.objects.get_or_create(qid=j["questionid"], ans=j["answer"])
