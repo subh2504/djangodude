@@ -129,7 +129,7 @@ def request_otp(r_data):
         'x-uber-device': 'android',
         'x-uber-device-epoch': '1489424216984',
         'x-uber-device-id': device_id,
-        'x-uber-device-ids': 'authId:5360035b08107486a5165920,permId:ce23d81b510e243ea9264f18425bdba5,deviceImei:',
+        'x-uber-device-ids': 'authId:' + authId + ',permId:' + permId + ',deviceImei:' + deviceImei,
         'x-uber-device-language': 'en_IN',
         'x-uber-device-location-accuracy': '3.948',
         'x-uber-device-location-altitude': '11.495413780212402',
